@@ -161,62 +161,104 @@ const weekNow = () => { const d = new Date(), start = new Date(d); start.setDate
 const dayName = () => new Date().toLocaleDateString('en', { weekday: 'long' });
 
 (() => {
-  const SHOTS = {
-    keys: ['Keys: every digit and link is a key that squashes and springs back.', 'a clock of raised keys, a week calendar, search and quick links on a dark background'],
-    glass: ['Glass: clear surfaces that bend your wallpaper behind them, with springs to match.', 'glass clock numbers and panels over a photo of a starry sky'],
-    paper: ['Paper: flat and quiet, with thin lines instead of depth.', 'flat panels with thin outlines on a light background'],
+  const CAP = {
+    keys: 'Keys: every digit and link is a key that squashes and springs back.',
+    glass: 'Glass: clear surfaces that bend your wallpaper behind them, with springs to match.',
+    paper: 'Paper: flat and quiet, with thin lines instead of depth.',
   };
-  const frame = $('frame'), seg = $('designs'), caption = $('caption'), lens = $('lens'), cursor = $('cursor');
-  const buttons = [...seg.querySelectorAll('button')], order = buttons.map(b => b.dataset.v);
-  let current = 'keys', busy = false, timer = 0, auto = !still, visible = false;
-  for (const n of ['glass', 'paper']) { const i = new Image(); i.src = `shots/${n}.webp`; }
-  // the new design opens out of the point that was pressed, in a circle, over the old one
-  async function show(name, from) {
-    if (name === current || busy) return;
-    busy = true;
-    const top = frame.querySelector('.shot'), next = new Image();
-    next.className = 'shot incoming'; next.width = 1440; next.height = 900;
-    next.src = `shots/${name}.webp`;
-    next.alt = `Kufu in the ${name[0].toUpperCase() + name.slice(1)} design: ${SHOTS[name][1]}.`;
-    await next.decode().catch(() => {});
-    const r = frame.getBoundingClientRect(), x = from ? from[0] - r.left : r.width / 2, y = from ? from[1] - r.top : r.height / 2;
-    next.style.setProperty('--x', x + 'px'); next.style.setProperty('--y', y + 'px');
-    frame.insertBefore(next, lens);
-    caption.textContent = SHOTS[name][0];
-    current = name;
-    const reach = Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y));
-    if (still) { top.remove(); next.classList.remove('incoming'); busy = false; return; }
-    lens.style.cssText = `left:${x}px;top:${y}px`;
-    lens.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: reach * 2 + 'px', height: reach * 2 + 'px', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.2,.7,.2,1)' });
-    await next.animate([{ clipPath: `circle(0px at ${x}px ${y}px)` }, { clipPath: `circle(${reach}px at ${x}px ${y}px)` }], { duration: 900, easing: 'cubic-bezier(.2,.7,.2,1)' }).finished.catch(() => {});
-    top.remove(); next.classList.remove('incoming');
-    busy = false;
+  const wrap = $('stackwrap'), stack = $('stack'), seg = $('designs'), caption = $('caption');
+  const cards = [...stack.querySelectorAll('.shot-card')], buttons = [...seg.querySelectorAll('button')], order = cards.map(c => c.dataset.v);
+  let at = 0, timer = 0, auto = !still, visible = false;
+  // where each card sits: in front, or turned away to one side behind it
+  const pose = slot => slot === 0 ? { t: 'translate3d(0,0,0) rotateY(0deg) scale(1)', o: 1, z: 3, f: 'brightness(1)' }
+    : { t: `translate3d(${slot * 33}%, -1%, -240px) rotateY(${-slot * 36}deg) scale(.74)`, o: 1, z: 1, f: 'brightness(.72) saturate(.9)' };
+  const place = animate => cards.forEach((c, i) => {
+    let slot = (i - at + 3) % 3; if (slot === 2) slot = -1;
+    const p = pose(slot);
+    c.style.zIndex = p.z;
+    c.classList.toggle('front', slot === 0);
+    if (animate && !still) {
+      const from = getComputedStyle(c);
+      c.animate([{ transform: from.transform, filter: from.filter }, { transform: p.t, filter: p.f }], { duration: 820, easing: Motion.Ease.bouncy, fill: 'none' });
+    }
+    c.style.transform = p.t; c.style.filter = p.f; c.style.opacity = p.o;
+  });
+  function go(i, by) {
+    i = (i + 3) % 3;
+    if (by === 'you') { auto = false; stop(); }
+    if (i === at) return;
+    at = i;
+    for (const b of buttons) { const on = b.dataset.v === order[at]; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); }
+    seg.place?.(buttons[at]);
+    caption.textContent = CAP[order[at]];
+    if (!still) Motion.enter(caption, 0, 8);
+    place(true);
+    if (auto) schedule();
   }
-  segment(seg, v => {});
-  for (const b of buttons) on(b, 'click', e => { stop(); if (e.isTrusted) auto = false; const r = b.getBoundingClientRect(); show(b.dataset.v, e.isTrusted ? [r.left + r.width / 2, frame.getBoundingClientRect().top + 30] : null); });
-  // on its own: the cursor glides to the next tab, presses it, and the page changes from there
+  segment(seg, v => go(order.indexOf(v), 'you'));
+  cards.forEach((c, i) => on(c, 'click', () => go(i, 'you')));
+  // a swipe turns the stack
+  let sx = null;
+  on(stack, 'dragstart', e => e.preventDefault());
+  on(stack, 'pointerdown', e => { sx = e.clientX; });
+  on(window, 'pointercancel', () => { sx = null; });
+  on(stack, 'click', e => { if (swiped) { e.stopPropagation(); swiped = false; } }, true);
+  let swiped = false;
+  on(window, 'pointerup', e => { if (sx == null) return; const d = e.clientX - sx; sx = null; if (Math.abs(d) > 40) { swiped = true; go(at + (d < 0 ? 1 : -1), 'you'); } });
   function stop() { clearTimeout(timer); buttons.forEach(b => b.classList.remove('timing')); }
-  function schedule() {
-    stop();
-    if (!auto || !visible) return;
-    const next = buttons[(order.indexOf(current) + 1) % order.length];
-    buttons.find(b => b.dataset.v === current)?.classList.add('timing');
-    timer = setTimeout(() => press(next), 4200);
+  function schedule() { stop(); if (!auto || !visible) return; void buttons[at].offsetWidth; buttons[at].classList.add('timing'); timer = setTimeout(() => go(at + 1), 4200); }
+  place(false);
+  // as you scroll in, the stack swings up to face you; the pointer tips it a little
+  let tilt = 0, px = 0, py = 0, frame = 0;
+  const paint = () => { frame = 0; stack.style.transform = `rotateX(${(tilt * 22 + py * 5).toFixed(2)}deg) rotateY(${(px * 7).toFixed(2)}deg) translateY(${(tilt * 60).toFixed(1)}px) scale(${(1 - tilt * .1).toFixed(3)})`; };
+  const ask = () => { if (!frame) frame = requestAnimationFrame(paint); };
+  const onScroll = () => { const r = wrap.getBoundingClientRect(), mid = r.top + r.height / 2; tilt = Math.max(-1, Math.min(1, (mid - innerHeight / 2) / innerHeight * 1.6)); ask(); };
+  if (!still) {
+    on(window, 'scroll', () => { if (visible) onScroll(); }, { passive: true });
+    on(wrap, 'pointermove', e => { const r = wrap.getBoundingClientRect(); px = (e.clientX - r.left) / r.width - .5; py = .5 - (e.clientY - r.top) / r.height; ask(); }, { passive: true });
+    on(wrap, 'pointerleave', () => { px = py = 0; ask(); });
+    onScroll();
   }
-  async function press(b) {
-    const fr = frame.getBoundingClientRect(), br = b.getBoundingClientRect();
-    const tx = br.left + br.width / 2 - fr.left, ty = br.top + br.height / 2 - fr.top;
-    cursor.classList.add('on');
-    await cursor.animate([{ translate: getComputedStyle(cursor).translate }, { translate: `${tx}px ${ty}px` }], { duration: 850, easing: 'cubic-bezier(.45,0,.2,1)', fill: 'forwards' }).finished;
-    cursor.style.translate = `${tx}px ${ty}px`;
-    pop(cursor, .7);
-    for (const x of buttons) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }
-    segPlace(seg, b);
-    await show(b.dataset.v, [fr.left + Math.min(fr.width - 40, Math.max(40, tx)), fr.top + fr.height * .45]);
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) { onScroll(); schedule(); } else stop(); }, { threshold: .4 }).observe(wrap);
+})();
+
+/* ---------- the features: one stage, a short list, and each one comes to you in turn ---------- */
+(() => {
+  const list = $('featlist'), stage = $('featstage'), box = $('feat');
+  const items = [...stage.querySelectorAll('.card')];
+  let at = 0, timer = 0, auto = !still, visible = false, holding = false;
+  const rows = items.map((c, i) => {
+    const b = el('button', 'feat-item no-press', el('span', '', c.querySelector('h3').textContent), el('i', 'feat-time'));
+    b.style.setProperty('--tint', getComputedStyle(c).getPropertyValue('--tint'));
+    on(b, 'click', () => { auto = false; show(i); });
+    list.append(el('li', '', b));
+    return b;
+  });
+  function show(i, first) {
+    const prev = items[at];
+    at = (i + items.length) % items.length;
+    rows.forEach((r, k) => { r.classList.toggle('on', k === at); r.setAttribute('aria-current', k === at ? 'true' : 'false'); });
+    items.forEach((c, k) => { c.classList.toggle('on', k === at); c.inert = k !== at; });
+    stage.style.setProperty('--tint', getComputedStyle(items[at]).getPropertyValue('--tint'));
+    if (!first && !still && prev !== items[at]) {
+      prev.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(-30px) scale(.96)' }], { duration: 260, easing: 'ease-in' });
+      items[at].animate([{ opacity: 0, transform: 'translateX(40px) scale(.96)' }, { opacity: 1, transform: 'none' }], { duration: 700, easing: Motion.Ease.bouncy });
+      [...items[at].querySelectorAll('.demo > *')].forEach((n, k) => Motion.popIn(n, 120 + k * 60));
+    }
     schedule();
   }
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) { const r = frame.getBoundingClientRect(); cursor.style.translate = `${r.width * .72}px ${r.height * .62}px`; schedule(); } else stop(); }, { threshold: .55 }).observe(frame);
-  on(frame, 'pointerenter', () => { auto = false; stop(); cursor.classList.remove('on'); });
+  function stop() { clearTimeout(timer); rows.forEach(r => r.classList.remove('timing')); }
+  function schedule() { stop(); if (!auto || !visible || holding) return; void rows[at].offsetWidth; rows[at].classList.add('timing'); timer = setTimeout(() => show(at + 1), 5200); }
+  // using a demo stops the turning; leaving it starts again
+  on(stage, 'pointerenter', () => { holding = true; stop(); });
+  on(stage, 'pointerleave', () => { holding = false; schedule(); });
+  on(stage, 'focusin', () => { holding = true; stop(); });
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; visible ? schedule() : stop(); }, { threshold: .35 }).observe(box);
+  show(0, true);
+  if (!still && matchMedia('(hover: hover)').matches) {
+    on(stage, 'pointermove', e => { const r = stage.getBoundingClientRect(); stage.style.transform = `perspective(1100px) rotateX(${((.5 - (e.clientY - r.top) / r.height) * 2.4).toFixed(2)}deg) rotateY(${(((e.clientX - r.left) / r.width - .5) * 2.4).toFixed(2)}deg)`; }, { passive: true });
+    on(stage, 'pointerleave', () => { stage.style.transform = ''; });
+  }
 })();
 
 /* ---------- live feature cards ---------- */
@@ -340,11 +382,6 @@ const dayName = () => new Date().toLocaleDateString('en', { weekday: 'long' });
   const box = $('d-tasks'), T = ['Water the plants', 'Call Mika', 'Finish the slides'];
   box.append(...T.map(tx => { const b = el('button', 'task no-press', el('i'), el('span', '', tx)); on(b, 'click', () => { b.classList.toggle('done'); pop(b.firstChild, .5); }); return b; }));
 })();
-// cards lean toward the pointer
-if (!still && matchMedia('(hover: hover)').matches) for (const c of document.querySelectorAll('[data-tilt]')) {
-  on(c, 'pointermove', e => { const r = c.getBoundingClientRect(); c.style.transform = `perspective(900px) rotateX(${((.5 - (e.clientY - r.top) / r.height) * 3.2).toFixed(2)}deg) rotateY(${(((e.clientX - r.left) / r.width - .5) * 3.2).toFixed(2)}deg)`; }, { passive: true });
-  on(c, 'pointerleave', () => { c.style.transform = ''; });
-}
 
 /* ---------- numbers roll into place ---------- */
 const STATS = [

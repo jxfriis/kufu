@@ -153,20 +153,30 @@ main > section:not(.hero) { padding: clamp(72px, 10vw, 128px) 24px 0; }
 .seg-time { position: absolute; left: 14px; right: 14px; bottom: 4px; height: 2px; border-radius: 2px; background: var(--accent); transform-origin: left; scale: 0 1; opacity: 0; }
 .seg button.timing .seg-time { opacity: .9; animation: seg-time 4.2s linear forwards; }
 @keyframes seg-time { to { scale: 1 1; } }
-.shot-frame { position: relative; width: 100%; margin: 0; padding: 0; overflow: hidden; aspect-ratio: 16 / 10; border-radius: 20px; isolation: isolate; }
-.shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.shot.incoming { z-index: 1; clip-path: circle(0px at var(--x) var(--y)); }
-.lens { position: absolute; z-index: 2; width: 0; height: 0; translate: -50% -50%; border-radius: 50%; pointer-events: none; box-shadow: inset 0 0 0 2px rgb(255 255 255 / .75), inset 0 0 40px rgb(255 255 255 / .25), 0 0 60px rgb(255 255 255 / .2); }
-.cursor { position: absolute; z-index: 3; left: 0; top: 0; width: 30px; height: 30px; margin: -4px 0 0 -6px; opacity: 0; transition: opacity .3s; pointer-events: none; filter: drop-shadow(0 3px 6px rgb(0 0 0 / .45)); }
-.cursor.on { opacity: 1; }
-.cursor svg { width: 100%; height: 100%; fill: #FFFFFF; stroke: #111; stroke-width: 1.2; stroke-linejoin: round; }
-/* live feature cards, each in its own color */
+.stack-wrap { width: 100%; perspective: 1600px; padding: 20px 0 40px; touch-action: pan-y; overflow: hidden; }
+.stack::after { content: ""; position: absolute; left: 8%; right: 8%; bottom: -34px; height: 40px; border-radius: 50%; background: radial-gradient(closest-side, rgb(0 0 0 / .55), transparent); transform: translateZ(-260px); }
+.stack { position: relative; width: min(100%, 860px); margin: 0 auto; aspect-ratio: 16 / 10; transform-style: preserve-3d; transform-origin: 50% 60%; will-change: transform; }
+.shot-card { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 18px; cursor: pointer; user-select: none; -webkit-user-drag: none; box-shadow: 0 30px 70px rgb(0 0 0 / .5), 0 0 0 1px rgb(255 255 255 / .08); transition: opacity .3s; backface-visibility: hidden; }
+.shot-card.front { cursor: default; }
+/* the features: one stage and a short list */
 .features { max-width: 1168px; margin: 0 auto; }
-.bento { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 40px; }
-.card { --tint: #fff; display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 280px; padding: 22px; border-radius: 24px; background: linear-gradient(160deg, color-mix(in srgb, var(--tint) 30%, #12141C), color-mix(in srgb, var(--tint) 10%, #0D0E14)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tint) 60%, transparent), 0 14px 34px rgb(0 0 0 / .3); transition: transform .35s var(--bouncy); }
-.card.wide { grid-column: span 2; }
-.card p { color: var(--muted); font-size: 14.5px; line-height: 1.4; }
-.card h3 { font-size: 20px; }
+.feat { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 22px; margin-top: 40px; align-items: stretch; }
+.feat-list { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.feat-item { position: relative; display: flex; align-items: center; width: 100%; height: 44px; padding: 0 16px; overflow: hidden; border: 0; border-radius: 12px; background: none; color: var(--muted); font-size: 15px; font-weight: 600; text-align: start; cursor: pointer; transition: color .2s, background .2s; }
+.feat-item::before { content: ""; width: 8px; height: 8px; margin-inline-end: 12px; border-radius: 50%; background: var(--tint); opacity: .5; transition: opacity .2s, scale .3s var(--bouncy); }
+.feat-item:hover { color: var(--text); }
+.feat-item.on { color: var(--text); background: rgb(255 255 255 / .07); }
+.feat-item.on::before { opacity: 1; scale: 1.4; }
+.feat-time { position: absolute; left: 16px; right: 16px; bottom: 6px; height: 2px; border-radius: 2px; background: var(--tint); transform-origin: left; scale: 0 1; opacity: 0; }
+.feat-item.timing .feat-time { opacity: .8; animation: seg-time 5.2s linear forwards; }
+.feat-stage { --tint: #fff; position: relative; min-height: 360px; border-radius: 26px; background: linear-gradient(160deg, color-mix(in srgb, var(--tint) 30%, #12141C), color-mix(in srgb, var(--tint) 10%, #0D0E14)); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--tint) 60%, transparent), 0 18px 44px rgb(0 0 0 / .32); transition: background .6s, box-shadow .6s, transform .35s var(--bouncy); }
+.feat-stage .card { position: absolute; inset: 0; display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); grid-template-rows: auto 1fr; column-gap: 34px; row-gap: 10px; align-content: center; padding: 36px 40px; opacity: 0; pointer-events: none; }
+.feat-stage .card > h3 { grid-column: 1; grid-row: 1; align-self: end; }
+.feat-stage .card > p { grid-column: 1; grid-row: 2; }
+.feat-stage .card > .demo { grid-column: 2; grid-row: 1 / 3; align-self: center; margin: 0; padding: 24px; min-height: 260px; border-radius: 20px; background: rgb(0 0 0 / .18); box-shadow: inset 0 1px 0 rgb(255 255 255 / .06); }
+.feat-stage .card.on { opacity: 1; pointer-events: auto; }
+.card p { max-width: 520px; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.card h3 { font-size: 26px; letter-spacing: -.02em; }
 .demo { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-width: 0; margin-top: 8px; }
 .c-ai { --tint: var(--ai); } .c-fuji { --tint: var(--fuji); } .c-matsu { --tint: var(--matsu); } .c-saku { --tint: var(--saku); } .c-yama { --tint: var(--yama); } .c-sora { --tint: var(--sora); } .c-shu { --tint: var(--accent); } .c-kin { --tint: var(--kinari); } .c-sumi { --tint: #7D8796; }
 
@@ -324,14 +334,20 @@ footer { display: flex; flex-direction: column; align-items: center; gap: 6px; p
 @media (max-width: 920px) {
   .top nav { display: none; }
   .top .accent-btn { margin-inline-start: auto; }
-  .bento, .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .card.wide { grid-column: span 2; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .feat { grid-template-columns: minmax(0, 1fr); }
+  .feat-list { flex-direction: row; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .feat-item { width: auto; white-space: nowrap; }
+  .feat-stage { min-height: 470px; }
+  .feat-stage .card { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; align-content: start; padding: 24px; }
+  .feat-stage .card > h3, .feat-stage .card > p { grid-column: 1; }
+  .feat-stage .card > p { grid-row: 2; }
+  .feat-stage .card > .demo { grid-column: 1; grid-row: 3; min-height: 230px; }
+  .stack { width: 82%; }
   .guide, .race, .meaning, .faq { grid-template-columns: minmax(0, 1fr); }
   .kanji { max-width: 420px; margin: 0 auto; }
 }
 @media (max-width: 560px) {
-  .bento { grid-template-columns: minmax(0, 1fr); }
-  .card.wide { grid-column: auto; }
   .stats { grid-template-columns: minmax(0, 1fr); }
   .tools { gap: 10px; }
   .digit.small { display: none; }

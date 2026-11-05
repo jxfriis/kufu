@@ -112,11 +112,13 @@
         <button data-v="glass"><span>Glass</span><i class="seg-time"></i></button>
         <button data-v="paper"><span>Paper</span><i class="seg-time"></i></button>
       </div>
-      <figure class="shot-frame panel rv" id="frame">
-        <img class="shot" src="shots/keys.webp" width="1440" height="900" alt="Kufu in the Keys design: a clock of raised keys, a week calendar, search and quick links on a dark background.">
-        <span class="lens" id="lens" aria-hidden="true"></span>
-        <span class="cursor" id="cursor" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 3l14 8.5-6.2 1.3 3.6 6.6-2.6 1.4-3.6-6.6L5.6 18.8z"/></svg></span>
-      </figure>
+      <div class="stack-wrap rv" id="stackwrap">
+        <div class="stack" id="stack">
+          <img class="shot-card" data-v="keys" src="shots/keys.webp" width="1440" height="900" alt="Kufu in the Keys design: a clock of raised keys, a week calendar, search and quick links on a dark background.">
+          <img class="shot-card" data-v="glass" src="shots/glass.webp" width="1440" height="900" loading="lazy" alt="Kufu in the Glass design: glass clock numbers and panels over a photo of a starry sky.">
+          <img class="shot-card" data-v="paper" src="shots/paper.webp" width="1440" height="900" loading="lazy" alt="Kufu in the Paper design: flat panels with thin outlines on a light background.">
+        </div>
+      </div>
       <p class="hint" id="caption">Keys: every digit and link is a key that squashes and springs back.</p>
     </section>
 
@@ -124,18 +126,21 @@
       <div class="head rv">
         <span class="tag" lang="ja">機能</span>
         <h2>Press everything</h2>
-        <p>Each of these is live. Nine small things a new tab can do, all ready when you want them.</p>
+        <p>Every one of these is live. Pick one, or let them come to you.</p>
       </div>
-      <div class="bento" id="bento">
-        <article class="card c-ai rv" data-tilt><h3>Weather</h3><p>A small pill that opens into the full forecast. Press it.</p><div class="demo" id="d-weather"></div></article>
-        <article class="card c-fuji wide rv" data-tilt><h3>Command palette</h3><p>Ctrl K searches links, runs actions and does math. Try <code>12*7</code> or <code>gi</code>.</p><div class="demo" id="d-palette"></div></article>
-        <article class="card c-matsu rv" data-tilt><h3>Pomodoro</h3><p>Focus sessions with breaks and a streak. Running 60 times faster here.</p><div class="demo" id="d-pomo"></div></article>
-        <article class="card c-saku rv" data-tilt><h3>Quick links</h3><p>Links as keys, with folders and groups. Import your bookmarks in one click.</p><div class="demo" id="d-links"></div></article>
-        <article class="card c-yama rv" data-tilt><h3>Nine languages</h3><p>Fully translated, down to the quotes. Press to say hello again.</p><div class="demo" id="d-lang"></div></article>
-        <article class="card c-sora wide rv" data-tilt><h3>Your wallpaper</h3><p>An Unsplash collection, your photos, videos or plain dark. Dim it, add real film grain.</p><div class="demo" id="d-wall"></div></article>
-        <article class="card c-kin rv" data-tilt><h3>Calendars</h3><p>Several ways to see the week and the month. Press one to change it.</p><div class="demo" id="d-cal"></div></article>
-        <article class="card c-shu rv" data-tilt><h3>Profiles</h3><p>Whole setups for work and home, by hand or by the clock.</p><div class="demo" id="d-prof"></div></article>
-        <article class="card c-sumi rv" data-tilt><h3>Focus tools</h3><p>Tasks, notes, countdowns, progress bars and sounds made in your browser.</p><div class="demo" id="d-tasks"></div></article>
+      <div class="feat rv" id="feat">
+        <ol class="feat-list" id="featlist"></ol>
+        <div class="feat-stage" id="featstage">
+          <article class="card c-ai"><h3>Weather</h3><p>A small pill that opens into the full forecast. Press it.</p><div class="demo" id="d-weather"></div></article>
+          <article class="card c-fuji"><h3>Command palette</h3><p>Ctrl K searches links, runs actions and does math. Try <code>12*7</code> or <code>gi</code>.</p><div class="demo" id="d-palette"></div></article>
+          <article class="card c-matsu"><h3>Pomodoro</h3><p>Focus sessions with breaks and a streak. Running 60 times faster here.</p><div class="demo" id="d-pomo"></div></article>
+          <article class="card c-saku"><h3>Quick links</h3><p>Links as keys, with folders and groups. Import your bookmarks in one click.</p><div class="demo" id="d-links"></div></article>
+          <article class="card c-yama"><h3>Nine languages</h3><p>Fully translated, down to the quotes. Press to say hello again.</p><div class="demo" id="d-lang"></div></article>
+          <article class="card c-sora"><h3>Your wallpaper</h3><p>An Unsplash collection, your photos, videos or plain dark. Dim it, add real film grain.</p><div class="demo" id="d-wall"></div></article>
+          <article class="card c-kin"><h3>Calendars</h3><p>Several ways to see the week and the month. Press one to change it.</p><div class="demo" id="d-cal"></div></article>
+          <article class="card c-shu"><h3>Profiles</h3><p>Whole setups for work and home, by hand or by the clock.</p><div class="demo" id="d-prof"></div></article>
+          <article class="card c-sumi"><h3>Focus tools</h3><p>Tasks, notes, countdowns, progress bars and sounds made in your browser.</p><div class="demo" id="d-tasks"></div></article>
+          </div>
       </div>
     </section>
 
