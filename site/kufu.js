@@ -21,6 +21,7 @@ function segment(box, change) {
     if (animate && !still) { Motion.slideX(pill, b.offsetLeft - 3); Motion.size(pill, 'width', b.offsetWidth); }
     else { pill.style.translate = `${b.offsetLeft - 3}px 0px`; pill.style.width = b.offsetWidth + 'px'; }
   };
+  box.place = b => place(b, true);
   const again = () => place(buttons.find(b => b.classList.contains('on')), false);
   again(); document.fonts?.ready.then(again); on(window, 'resize', again);
   for (const b of buttons) {
@@ -33,6 +34,8 @@ function segment(box, change) {
     });
   }
 }
+
+const segPlace = (box, b) => box.place?.(b);
 
 /* the page's color slides from section to section as you scroll */
 const bgs = new IntersectionObserver(es => { for (const e of es) if (e.isIntersecting) document.body.style.backgroundColor = e.target.dataset.bg; }, { rootMargin: '-45% 0px -45% 0px' });
@@ -48,11 +51,11 @@ const seen = new IntersectionObserver(es => {
 }, { rootMargin: '0px 0px -8% 0px' });
 if (!still) document.querySelectorAll('.rv').forEach(n => { n.classList.add('wait'); const sibs = [...n.parentElement.children].filter(x => x.classList.contains('rv')); n.dataset.i = Math.min(sibs.indexOf(n), 5); seen.observe(n); });
 
-/* ---------- the hero: a real clock under the real sky ---------- */
+/* ---------- the hero: a real clock over Japan at this very hour ---------- */
 const clock = $('clock');
-const makeDigit = small => { const s = el('div', 'digit' + (small ? ' small' : ''), el('b')); on(s, 'pointerdown', () => pop(s, .86)); return s; };
-const slots = [makeDigit(), makeDigit(), makeDigit(), makeDigit(), makeDigit(true), makeDigit(true)];
-clock.append(slots[0], slots[1], el('div', 'gap', el('i'), el('i')), slots[2], slots[3], slots[4], slots[5]);
+const makeDigit = () => { const s = el('div', 'digit', el('b')); on(s, 'pointerdown', () => pop(s, .86)); return s; };
+const slots = [makeDigit(), makeDigit(), makeDigit(), makeDigit()];
+clock.append(slots[0], slots[1], el('div', 'gap', el('i'), el('i')), slots[2], slots[3]);
 function show(slot, ch, animate) {
   const cur = slot.lastChild;
   if (cur.textContent === ch) return;
@@ -63,54 +66,71 @@ function show(slot, ch, animate) {
   Motion.fadeOut(cur);
   pop(slot, .95);
 }
-let preview = null, heroVisible = true;
+const hourParam = +new URLSearchParams(location.search).get('hour');
+const fixed = location.search.includes('hour=') && hourParam >= 0 && hourParam < 24 ? hourParam : null;
+const nowHour = () => { if (fixed != null) return fixed; const n = new Date(); return n.getHours() + n.getMinutes() / 60; };
 function tick(animate) {
-  const now = new Date();
-  let h = now.getHours(), m = now.getMinutes();
-  if (preview != null) { h = Math.floor(preview) % 24; m = Math.floor((preview % 1) * 60); }
-  const text = pad(h) + pad(m) + pad(now.getSeconds());
+  const h = nowHour(), text = pad(Math.floor(h)) + pad(Math.floor((h % 1) * 60 + 1e-6));
   slots.forEach((slot, i) => show(slot, text[i], animate));
 }
 tick(false);
 if (!still) slots.forEach((s, i) => Motion.popIn(s, 60 + i * 55));
-new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; }).observe($('hero'));
-setInterval(() => { if (heroVisible && !document.hidden) tick(true); }, 1000);
-segment($('clockstyle'), v => { clock.dataset.s = v; slots.forEach(s => pop(s, .9)); });
 
-const SKY = [[0, '#060A20', '#141B48'], [4.6, '#0F1540', '#33306E'], [6.6, '#3B3F92', '#F69474'], [9, '#1C5FA8', '#8ACBE6'], [15, '#1E69B2', '#B0DCEC'], [17.6, '#3A2B78', '#F47C50'], [19.6, '#17174C', '#7A3A70'], [24, '#060A20', '#141B48']];
-const hero = $('hero'), orb = $('orb'), stars = $('stars'), hello = $('hello');
-for (let i = 0; i < 70; i++) { const s = el('i'); s.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 62}%;opacity:${(.3 + Math.random() * .7).toFixed(2)};scale:${(.5 + Math.random()).toFixed(2)}`; stars.append(s); }
+// the colors of the scene through a day, in Japan's own light
+const DAY = [
+  // hour, sky top, sky middle, sky low, sun, fuji, haze, snow, far hills, near hills, shore, lake, deep lake, mist, pine, blossom, torii, lamps, stars, birds
+  [0, '#04060F', '#0A1230', '#1A2350', '#F5EEDF', '#18214A', '#202A58', '#8E9ACB', '#121A3C', '#0B1029', '#05070F', '#101A3C', '#05081A', '#26305E', '#04060E', '#5C3550', '#7A2416', 1, 1, 0],
+  [4.6, '#070B22', '#1C1F4E', '#4A3A6C', '#F5EEDF', '#262A5A', '#3B3466', '#ADA8D2', '#1C1D44', '#111232', '#070816', '#26285A', '#0B0C24', '#4A4280', '#06070F', '#7A4566', '#8A2C1B', .9, .6, 0],
+  [6.2, '#1F2E6E', '#8B5E92', '#F0A07E', '#FF6A3D', '#5E5687', '#C48A8E', '#F6DCE0', '#3E3868', '#272448', '#120F26', '#9A6E8E', '#2C2448', '#F1B6A8', '#0E0C1C', '#E7A2B8', '#C23A22', .25, 0, .4],
+  [8, '#3672C0', '#7FB2E2', '#F4DCC4', '#FFB070', '#6D8CC2', '#B9CBE2', '#FFFFFF', '#476F9F', '#2C5480', '#14263E', '#7FAED6', '#2A4E78', '#FFFFFF', '#14241E', '#F4A6C0', '#E8442A', 0, 0, 1],
+  [12.5, '#2A6FC8', '#73AEE6', '#CDE6F4', '#FFF1D2', '#6C93C9', '#BCD5EC', '#FFFFFF', '#4878AA', '#2E5A88', '#15283F', '#74AAD8', '#244A76', '#FFFFFF', '#13261F', '#F6AAC4', '#EA4A2E', 0, 0, 1],
+  [16.2, '#3B6FB8', '#94B6DC', '#F2D3A6', '#FFC27A', '#7487B6', '#D8C3B6', '#FFF4E6', '#556A98', '#34466E', '#1A2438', '#B7AFB8', '#3A4466', '#FFF1DE', '#16201E', '#F2A2BC', '#E8442A', 0, 0, 1],
+  [18.1, '#252A6A', '#B5527A', '#FA8A4A', '#FF5436', '#5E4170', '#C2617A', '#FFD3C2', '#45305E', '#2D2146', '#120D22', '#D2735E', '#3A2242', '#FFAE88', '#0F0A18', '#F096AE', '#D63E24', .45, 0, .6],
+  [19.3, '#141B48', '#43306C', '#91496C', '#FF5436', '#33305E', '#5A3E6E', '#C7B2D4', '#241E46', '#191538', '#0A0818', '#4A3A6A', '#120E2A', '#6A4A7E', '#08070F', '#A86488', '#9E3020', 1, .35, 0],
+  [21, '#070A1E', '#0F1638', '#232A5C', '#F5EEDF', '#1C2450', '#262E60', '#98A2CF', '#151C40', '#0D112C', '#060811', '#14204A', '#06091C', '#2C3666', '#05060E', '#64395A', '#80261A', 1, .9, 0],
+  [24, '#04060F', '#0A1230', '#1A2350', '#F5EEDF', '#18214A', '#202A58', '#8E9ACB', '#121A3C', '#0B1029', '#05070F', '#101A3C', '#05081A', '#26305E', '#04060E', '#5C3550', '#7A2416', 1, 1, 0],
+];
+const VARS = ['--sky0', '--sky1', '--sky2', '--sun', '--far', '--haze', '--snow', '--r1', '--r2', '--shore-c', '--water', '--deep', '--cloud', '--pine', '--blossom', '--torii', '--lamp', '--stars', '--birds'];
+const hero = $('hero'), scene = $('scene'), sun = $('sun'), moon = $('moon'), sunpath = $('sunpath');
 function paintSky(h) {
-  let i = 0; while (i < SKY.length - 2 && h >= SKY[i + 1][0]) i++;
-  const a = SKY[i], b = SKY[i + 1], f = (h - a[0]) / (b[0] - a[0]);
-  const top = mix(a[1], b[1], f), low = mix(a[2], b[2], f);
-  hero.style.setProperty('--sky-top', top);
-  hero.style.setProperty('--sky-low', low);
-  hero.style.setProperty('--m-far', mix(top, low, .25));
-  hero.style.setProperty('--m-mid', mix(top, '#0A0E26', .45));
-  hero.style.setProperty('--m-near', mix(top, '#050714', .72));
-  const day = h >= 6 && h < 19;
-  const t = day ? (h - 6) / 13 : ((h < 6 ? h + 24 : h) - 19) / 11;
-  orb.style.left = (8 + t * 84) + '%';
-  orb.style.top = (66 - Math.sin(t * Math.PI) * 54) + '%';
-  orb.classList.toggle('moon', !day);
-  stars.style.opacity = day ? Math.max(0, 1 - Math.min(h - 6, 19 - h) * 1.2) * .4 : .9;
-  hello.textContent = h < 5 ? 'Good night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night';
+  let i = 0; while (i < DAY.length - 2 && h >= DAY[i + 1][0]) i++;
+  const a = DAY[i], b = DAY[i + 1], t = (h - a[0]) / (b[0] - a[0]);
+  VARS.forEach((name, k) => {
+    const x = a[k + 1], y = b[k + 1];
+    hero.style.setProperty(name, typeof x === 'number' ? (x + (y - x) * t).toFixed(3) : mix(x, y, t));
+  });
+  // the sun crosses from the left hills to behind Fuji; at night the moon takes its path
+  const day = h >= 5.9 && h < 18.9, span = day ? [5.9, 18.9] : [18.9, 29.9], hh = !day && h < 5.9 ? h + 24 : h;
+  // a wide ellipse: low over the hills at the ends of the day, high over the clock at its middle
+  const p = (hh - span[0]) / (span[1] - span[0]);
+  // the moon keeps to the left of the clock, over the pagoda
+  const x = day ? 800 - Math.cos(p * Math.PI) * 790 : 110 + p * 560, y = day ? 690 - Math.sin(p * Math.PI) * 560 : 610 - Math.sin(p * Math.PI) * 420;
+  sun.style.transform = `translate(${x}px, ${y}px)`;
+  moon.style.transform = `translate(${x}px, ${y}px)`;
+  sun.style.opacity = day ? 1 : 0;
+  moon.style.opacity = day ? 0 : 1;
+  // light on the water: strongest when the sun is low, and only when it is up
+  const low = day ? Math.max(0, 1 - Math.sin(p * Math.PI) * 1.4) : .35 * Math.sin(p * Math.PI);
+  sunpath.style.transform = `translateX(${x}px)`;
+  sunpath.style.opacity = (day ? .25 + low * .6 : low).toFixed(2);
 }
-const nowHour = () => { const n = new Date(); return n.getHours() + n.getMinutes() / 60; };
-const hourInput = $('hour'), hourNow = $('hournow');
-hourInput.value = nowHour();
+let heroVisible = true;
 paintSky(nowHour());
-on(hourInput, 'input', () => { preview = +hourInput.value; paintSky(preview); tick(true); hourNow.hidden = false; });
-on(hourNow, 'click', () => {
-  const from = preview, to = nowHour(), start = performance.now();
-  preview = null; hourNow.hidden = true; tick(true);
-  if (still) { paintSky(to); hourInput.value = to; return; }
-  const step = t => { const f = Math.min(1, (t - start) / 700), v = from + (to - from) * (1 - (1 - f) ** 3); paintSky(v); hourInput.value = v; if (f < 1) requestAnimationFrame(step); };
-  requestAnimationFrame(step);
-});
-setInterval(() => { if (preview == null && heroVisible) { paintSky(nowHour()); hourInput.value = nowHour(); } }, 60000);
+new IntersectionObserver(([e]) => { heroVisible = e.isIntersecting; hero.classList.toggle('still', !e.isIntersecting); }).observe(hero);
+// the minute turns over on the minute, and the light moves with it
+const nextMinute = () => setTimeout(() => { if (!document.hidden) { tick(true); paintSky(nowHour()); } nextMinute(); }, 60000 - (Date.now() % 60000) + 30);
+nextMinute();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(false); paintSky(nowHour()); } });
 
+// cherry petals drifting from the branch
+if (!still) {
+  const box = $('petals');
+  for (let i = 0; i < 14; i++) {
+    const p = el('i');
+    p.style.cssText = `left:${(Math.random() * 30).toFixed(1)}%;top:${(Math.random() * 22).toFixed(1)}%;--dx:${(30 + Math.random() * 55).toFixed(0)}vw;--dy:${(45 + Math.random() * 45).toFixed(0)}vh;--r:${(180 + Math.random() * 540).toFixed(0)}deg;animation-duration:${(11 + Math.random() * 10).toFixed(1)}s;animation-delay:-${(Math.random() * 20).toFixed(1)}s;scale:${(.6 + Math.random() * .7).toFixed(2)}`;
+    box.append(p);
+  }
+}
 // the title lands letter by letter
 const title = $('title');
 if (!still) {
@@ -127,160 +147,77 @@ if (!still) {
 }
 // the mountains drift with the pointer and the scroll
 if (!still) {
-  const layers = [...document.querySelectorAll('.land .layer')].map(n => [n, +n.dataset.depth]);
+  const layers = [...document.querySelectorAll('.scene .layer')].map(n => [n, +n.dataset.depth]);
   let px = 0, py = 0, want = false;
-  const paint = () => { want = false; for (const [n, d] of layers) n.style.transform = `translate(${(-px * d).toFixed(1)}px, ${(py * d * 2.4).toFixed(1)}px)`; };
+  const paint = () => { want = false; for (const [n, d] of layers) n.style.transform = `translate(${(-px * d).toFixed(1)}px, ${(py * d * 2).toFixed(1)}px)`; };
   const ask = () => { if (!want) { want = true; requestAnimationFrame(paint); } };
   on(hero, 'pointermove', e => { px = e.clientX / innerWidth - .5; ask(); }, { passive: true });
   on(window, 'scroll', () => { if (heroVisible) { py = scrollY / innerHeight; ask(); } }, { passive: true });
 }
 
-/* ---------- the working miniature ---------- */
-const NAMES = { clock: 'Clock', date: 'Calendar', greeting: 'Greeting', search: 'Search', links: 'Links', weather: 'Weather', quote: 'Quote', tasks: 'Tasks', pomodoro: 'Pomodoro' };
+/* ---------- three designs, and a cursor that shows you round them ---------- */
 const LINKS = [['G', '#EA4335', 'Gmail'], ['Y', '#FF3355', 'YouTube'], ['G', '#8AA4FF', 'GitHub'], ['C', '#E8835A', 'Claude'], ['S', '#2BD46A', 'Spotify'], ['U', '#D7DBE2', 'Unsplash']];
-const mini = $('mini'), stage = $('stage'), wall = $('wall');
 const weekNow = () => { const d = new Date(), start = new Date(d); start.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return [...Array(7)].map((_, i) => { const x = new Date(start); x.setDate(start.getDate() + i); return { n: x.getDate(), l: 'MTWTFSS'[i], today: x.toDateString() === d.toDateString() }; }); };
-const dayName = () => new Date().toLocaleDateString('en', { weekday: 'long' }), dateName = () => new Date().toLocaleDateString('en', { month: 'long', day: 'numeric' });
-const miniDigits = [];
-const WIDGET = {
-  clock() { const r = el('div', 'm-clock'); for (let i = 0; i < 4; i++) { const k = el('b', 'm-digit'); miniDigits.push(k); r.append(k); if (i === 1) r.append(el('i', 'm-colon', el('u'), el('u'))); } return r; },
-  date() { const w = el('div', 'm-week'); for (const d of weekNow()) w.append(el('span', d.today ? 'today' : '', el('small', '', d.l), el('b', '', String(d.n)))); return el('div', 'm-date', el('div', 'm-dline', el('b', '', dayName()), ' ' + dateName()), w); },
-  greeting() { const h = new Date().getHours(); return el('div', 'm-greet', el('b', '', h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : h < 22 ? 'Good evening' : 'Good night'), el('small', '', 'Clear sky, 12° in Kyoto')); },
-  search() { return el('div', 'm-search', el('i'), 'Search'); },
-  links() { return el('div', 'm-links', ...LINKS.map(([ch, c, name]) => { const k = el('div', 'm-key press', el('span', '', ch), el('small', '', name)); k.firstChild.style.color = c; return k; })); },
-  weather() { return el('div', 'm-wx', el('i'), el('b', '', '12°'), el('small', '', 'Kyoto')); },
-  quote() { return el('div', 'm-quote', el('p', '', 'Well done is better than well said.'), el('small', '', 'Benjamin Franklin')); },
-  tasks() { return el('div', 'm-note', el('b', '', 'Tasks'), el('small', '', 'Water the plants'), el('small', '', 'Call Mika')); },
-  pomodoro() { return el('div', 'm-note', el('b', '', '25:00'), el('small', '', 'Focus')); },
-};
-const widgets = {};
-for (const id of Object.keys(WIDGET)) { const w = el('div', 'w', WIDGET[id]()); w.dataset.w = id; w.dataset.label = NAMES[id]; widgets[id] = w; }
-const ZONES = ['tl', 'tc', 'tr', 'ml', 'mc', 'mr', 'bl', 'bc', 'br'];
-const zoneEls = Object.fromEntries(ZONES.map(z => { const n = el('div', 'zone z-' + z); n.dataset.z = z; mini.append(n); return [z, n]; }));
-const layout = { tr: ['weather'], mc: ['clock', 'date', 'greeting', 'search', 'links'], bc: ['quote'] };
-let arranging = false;
-function placeMini() {
-  for (const z of ZONES) zoneEls[z].replaceChildren(...(layout[z] || []).map(id => widgets[id]));
-  decorate();
-}
-const unused = () => Object.keys(WIDGET).filter(id => !ZONES.some(z => layout[z]?.includes(id)));
-function decorate() {
-  mini.querySelectorAll('.m-x, .m-plus').forEach(n => n.remove());
-  if (!arranging) return;
-  for (const z of ZONES) {
-    const list = layout[z] || [];
-    for (const id of list) {
-      const x = el('button', 'm-x no-press', el('i'));
-      x.setAttribute('aria-label', 'Remove ' + NAMES[id]);
-      on(x, 'click', () => flip(() => { layout[z] = list.filter(k => k !== id); placeMini(); }));
-      widgets[id].append(x);
-    }
-    if (!list.length && unused().length) {
-      const p = el('button', 'm-plus no-press', el('i'));
-      p.setAttribute('aria-label', 'Add something here');
-      on(p, 'click', () => plusMenu(p, z));
-      zoneEls[z].append(p);
-    }
-  }
-}
-let menu = null;
-const closeMenu = () => { menu?.remove(); menu = null; };
-function plusMenu(btn, z) {
-  closeMenu();
-  menu = el('div', 'm-menu panel', ...unused().map(id => { const b = el('button', 'no-press', NAMES[id]); on(b, 'click', () => { closeMenu(); flip(() => { (layout[z] ||= []).push(id); placeMini(); }); pop(widgets[id], .7); }); return b; }));
-  const a = btn.getBoundingClientRect(), s = stage.getBoundingClientRect();
-  stage.append(menu);
-  const mh = menu.offsetHeight, mw = menu.offsetWidth;
-  menu.style.left = Math.min(s.width - mw - 8, Math.max(8, a.left - s.left - mw / 2 + a.width / 2)) + 'px';
-  menu.style.top = Math.max(8, Math.min(s.height - mh - 8, a.bottom - s.top + 6)) + 'px';
-  if (!still) Motion.popIn(menu);
-}
-on(document, 'pointerdown', e => { if (menu && !e.target.closest('.m-menu, .m-plus')) closeMenu(); }, true);
-function flip(change) {
-  const before = new Map(Object.values(widgets).filter(w => w.isConnected).map(w => [w, w.getBoundingClientRect()]));
-  change();
-  if (still) return;
-  for (const [w, a] of before) { if (!w.isConnected) continue; const b = w.getBoundingClientRect(), dx = a.left - b.left, dy = a.top - b.top; if (dx || dy) w.animate([{ translate: `${dx}px ${dy}px` }, { translate: '0px 0px' }], { duration: 650, easing: Motion.Ease.bouncy }); }
-}
-placeMini();
-const paintMini = () => { const d = new Date(), t = pad(d.getHours()) + pad(d.getMinutes()); miniDigits.forEach((k, i) => { k.textContent = t[i]; }); };
-paintMini(); setInterval(paintMini, 20000);
+const dayName = () => new Date().toLocaleDateString('en', { weekday: 'long' });
 
-// arranging: drag, red remove, plus
-const arrangeBtn = $('arrange');
-on(arrangeBtn, 'click', () => {
-  arranging = !arranging;
-  arrangeBtn.textContent = arranging ? 'Done' : 'Arrange';
-  arrangeBtn.setAttribute('aria-pressed', arranging);
-  closeMenu();
-  flip(() => { stage.toggleAttribute('data-arrange', arranging); decorate(); });
-  $('stagehint').textContent = arranging ? 'Drag anything to move it. Red removes it, plus adds something to an empty spot.' : 'The real thing works the same way, with many more options.';
-});
-on(mini, 'pointerdown', e => {
-  const w = e.target.closest('.w');
-  if (!arranging || !w || e.target.closest('.m-x') || e.button) return;
-  e.preventDefault();
-  const id = w.dataset.w, r = w.getBoundingClientRect(), s = stage.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
-  let ghost = null, over = null;
-  const move = ev => {
-    if (!ghost) {
-      if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 4) return;
-      ghost = w.cloneNode(true);
-      ghost.classList.add('m-ghost');
-      ghost.querySelector('.m-x')?.remove();
-      ghost.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;font-size:${getComputedStyle(mini).fontSize}`;
-      document.body.append(ghost);
-      w.style.opacity = '.25';
-      pop(ghost, .94);
-    }
-    ghost.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
-    const z = document.elementsFromPoint(ev.clientX, ev.clientY).map(x => x.closest?.('.zone')).find(Boolean) || null;
-    if (z !== over) { over?.classList.remove('over'); over = z; over?.classList.add('over'); }
+(() => {
+  const SHOTS = {
+    keys: ['Keys: every digit and link is a key that squashes and springs back.', 'a clock of raised keys, a week calendar, search and quick links on a dark background'],
+    glass: ['Glass: clear surfaces that bend your wallpaper behind them, with springs to match.', 'glass clock numbers and panels over a photo of a starry sky'],
+    paper: ['Paper: flat and quiet, with thin lines instead of depth.', 'flat panels with thin outlines on a light background'],
   };
-  const up = ev => {
-    removeEventListener('pointermove', move); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
-    if (!ghost) return;
-    ghost.remove(); w.style.opacity = ''; over?.classList.remove('over');
-    if (!over) return;
-    const to = over.dataset.z;
-    flip(() => {
-      for (const z of ZONES) layout[z] = (layout[z] || []).filter(k => k !== id);
-      const kids = [...over.querySelectorAll(':scope > .w')].filter(k => k !== w);
-      const at = kids.findIndex(k => { const b = k.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
-      layout[to].splice(at < 0 ? layout[to].length : at, 0, id);
-      placeMini();
-    });
-  };
-  addEventListener('pointermove', move); addEventListener('pointerup', up); addEventListener('pointercancel', up);
-});
-segment($('designs'), v => { stage.dataset.d = v; Object.values(widgets).forEach(w => { if (w.isConnected) pop(w, .95); }); });
-const ACCENTS = ['#FF5436', '#F26A3D', '#F5AE3C', '#22885A', '#3B82C4', '#EC6A97', '#9B7BEA', '#F4F4F2'];
-stage.style.setProperty('--a', ACCENTS[0]);
-const accentBox = $('accents');
-ACCENTS.forEach((c, i) => {
-  const b = el('button', 'swatch' + (i ? '' : ' on'));
-  b.style.setProperty('--c', c);
-  b.setAttribute('aria-label', 'Accent ' + (i + 1));
-  on(b, 'click', () => { accentBox.querySelectorAll('.swatch').forEach(x => x.classList.toggle('on', x === b)); stage.style.setProperty('--a', c); stage.toggleAttribute('data-white', c === '#F4F4F2'); pop(b, .7); });
-  accentBox.append(b);
-});
-const WALLS = [['teal', 'shots/wall-teal.webp'], ['warm', 'shots/wall-warm.webp'], ['night', 'shots/wall-night.webp'], ['plain', '']];
-const wallBox = $('walls');
-const setWall = (src, animate) => {
-  stage.toggleAttribute('data-plain', !src);
-  if (!src) { wall.style.backgroundImage = ''; return; }
-  const img = new Image();
-  img.onload = () => { wall.style.backgroundImage = `url(${src})`; if (animate && !still) wall.animate([{ opacity: .3, scale: 1.04 }, { opacity: 1, scale: 1 }], { duration: 500, easing: 'ease-out' }); };
-  img.src = src;
-};
-WALLS.forEach(([name, src], i) => {
-  const b = el('button', 'wall-btn' + (i ? '' : ' on'));
-  b.setAttribute('aria-label', 'Wallpaper ' + name);
-  if (src) b.style.backgroundImage = `url(${src})`;
-  on(b, 'click', () => { wallBox.querySelectorAll('.wall-btn').forEach(x => x.classList.toggle('on', x === b)); setWall(src, true); pop(b, .8); });
-  wallBox.append(b);
-});
-new IntersectionObserver((es, io) => { if (es[0].isIntersecting) { setWall(WALLS[0][1]); io.disconnect(); } }, { rootMargin: '400px' }).observe(stage);
+  const frame = $('frame'), seg = $('designs'), caption = $('caption'), lens = $('lens'), cursor = $('cursor');
+  const buttons = [...seg.querySelectorAll('button')], order = buttons.map(b => b.dataset.v);
+  let current = 'keys', busy = false, timer = 0, auto = !still, visible = false;
+  for (const n of ['glass', 'paper']) { const i = new Image(); i.src = `shots/${n}.webp`; }
+  // the new design opens out of the point that was pressed, in a circle, over the old one
+  async function show(name, from) {
+    if (name === current || busy) return;
+    busy = true;
+    const top = frame.querySelector('.shot'), next = new Image();
+    next.className = 'shot incoming'; next.width = 1440; next.height = 900;
+    next.src = `shots/${name}.webp`;
+    next.alt = `Kufu in the ${name[0].toUpperCase() + name.slice(1)} design: ${SHOTS[name][1]}.`;
+    await next.decode().catch(() => {});
+    const r = frame.getBoundingClientRect(), x = from ? from[0] - r.left : r.width / 2, y = from ? from[1] - r.top : r.height / 2;
+    next.style.setProperty('--x', x + 'px'); next.style.setProperty('--y', y + 'px');
+    frame.insertBefore(next, lens);
+    caption.textContent = SHOTS[name][0];
+    current = name;
+    const reach = Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y));
+    if (still) { top.remove(); next.classList.remove('incoming'); busy = false; return; }
+    lens.style.cssText = `left:${x}px;top:${y}px`;
+    lens.animate([{ width: '0px', height: '0px', opacity: 1 }, { width: reach * 2 + 'px', height: reach * 2 + 'px', opacity: 0 }], { duration: 900, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    await next.animate([{ clipPath: `circle(0px at ${x}px ${y}px)` }, { clipPath: `circle(${reach}px at ${x}px ${y}px)` }], { duration: 900, easing: 'cubic-bezier(.2,.7,.2,1)' }).finished.catch(() => {});
+    top.remove(); next.classList.remove('incoming');
+    busy = false;
+  }
+  segment(seg, v => {});
+  for (const b of buttons) on(b, 'click', e => { stop(); if (e.isTrusted) auto = false; const r = b.getBoundingClientRect(); show(b.dataset.v, e.isTrusted ? [r.left + r.width / 2, frame.getBoundingClientRect().top + 30] : null); });
+  // on its own: the cursor glides to the next tab, presses it, and the page changes from there
+  function stop() { clearTimeout(timer); buttons.forEach(b => b.classList.remove('timing')); }
+  function schedule() {
+    stop();
+    if (!auto || !visible) return;
+    const next = buttons[(order.indexOf(current) + 1) % order.length];
+    buttons.find(b => b.dataset.v === current)?.classList.add('timing');
+    timer = setTimeout(() => press(next), 4200);
+  }
+  async function press(b) {
+    const fr = frame.getBoundingClientRect(), br = b.getBoundingClientRect();
+    const tx = br.left + br.width / 2 - fr.left, ty = br.top + br.height / 2 - fr.top;
+    cursor.classList.add('on');
+    await cursor.animate([{ translate: getComputedStyle(cursor).translate }, { translate: `${tx}px ${ty}px` }], { duration: 850, easing: 'cubic-bezier(.45,0,.2,1)', fill: 'forwards' }).finished;
+    cursor.style.translate = `${tx}px ${ty}px`;
+    pop(cursor, .7);
+    for (const x of buttons) { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); }
+    segPlace(seg, b);
+    await show(b.dataset.v, [fr.left + Math.min(fr.width - 40, Math.max(40, tx)), fr.top + fr.height * .45]);
+    schedule();
+  }
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) { const r = frame.getBoundingClientRect(); cursor.style.translate = `${r.width * .72}px ${r.height * .62}px`; schedule(); } else stop(); }, { threshold: .55 }).observe(frame);
+  on(frame, 'pointerenter', () => { auto = false; stop(); cursor.classList.remove('on'); });
+})();
 
 /* ---------- live feature cards ---------- */
 // weather
