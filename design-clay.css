@@ -1,0 +1,40 @@
+/* Loaded only while the clay design is in use. */
+[data-style="clay"][data-theme="dark"] {
+  --win: #1D2024;
+  --raised-fill: linear-gradient(rgb(40 44 50 / var(--sf, 1)), rgb(31 34 39 / var(--sf, 1)));
+  --raised-fill-hover: linear-gradient(rgb(47 51 58 / var(--sf, 1)), rgb(36 40 45 / var(--sf, 1)));
+  --panel-fill: linear-gradient(rgb(36 39 45 / var(--sf, 1)), rgb(29 32 36 / var(--sf, 1)));
+  --inset-fill: rgb(24 26 30 / var(--sf, 1));
+  --panel-solid: linear-gradient(#24272D, #1D2024);
+  --clay-up: -5px -5px 12px rgb(255 255 255 / .035), 7px 9px 18px rgb(0 0 0 / .42), inset 1px 1px 1.5px rgb(255 255 255 / .09), inset -2px -3px 6px rgb(0 0 0 / .22);
+  --clay-small: -3px -3px 7px rgb(255 255 255 / .03), 4px 5px 10px rgb(0 0 0 / .38), inset 1px 1px 1px rgb(255 255 255 / .08);
+  --clay-in: inset 3px 3px 7px rgb(0 0 0 / .42), inset -2px -2px 5px rgb(255 255 255 / .04);
+  --line: #30343A; --divider: #282B30;
+}
+[data-style="clay"][data-theme="light"] {
+  --win: #F3F2EE;
+  --raised-fill: linear-gradient(rgb(252 251 248 / var(--sf, 1)), rgb(244 243 239 / var(--sf, 1)));
+  --raised-fill-hover: linear-gradient(rgb(254 253 251 / var(--sf, 1)), rgb(247 246 242 / var(--sf, 1)));
+  --panel-fill: linear-gradient(rgb(250 249 246 / var(--sf, 1)), rgb(243 242 238 / var(--sf, 1)));
+  --inset-fill: rgb(236 234 229 / var(--sf, 1));
+  --panel-solid: linear-gradient(#FAF9F6, #F3F2EE);
+  --clay-up: -5px -5px 12px rgb(255 255 255 / .85), 7px 9px 18px rgb(120 112 95 / .3), inset 1px 1px 1.5px rgb(255 255 255 / .8), inset -2px -3px 6px rgb(120 112 95 / .12);
+  --clay-small: -3px -3px 7px rgb(255 255 255 / .8), 4px 5px 10px rgb(120 112 95 / .26), inset 1px 1px 1px rgb(255 255 255 / .7);
+  --clay-in: inset 3px 3px 7px rgb(120 112 95 / .28), inset -2px -2px 5px rgb(255 255 255 / .8);
+  --line: #E1DFD8; --divider: #E7E5DF;
+}
+[data-style="clay"] { --raised-edge: linear-gradient(transparent, transparent); --panel-edge: linear-gradient(transparent, transparent); --inset-edge: linear-gradient(transparent, transparent); --edge-solid: linear-gradient(transparent, transparent); --accent-edge: linear-gradient(transparent, transparent); --panel-shadow: var(--clay-up); --soft-shadow: var(--clay-small); }
+[data-style="clay"] #page :is(.panel, .digit, .key:not(.add), .wx-pill), [data-style="clay"] .search form { box-shadow: var(--clay-up); }
+[data-style="clay"] :is(.raised, .raised-btn, .accent-btn, .tile, .widget-tile, .chip-btn, .avatar, .seg-pill, .nav-pill, .day.today, .cal-page) { box-shadow: var(--clay-small); }
+[data-style="clay"] :is(.inset, .set-card, .well, .g-badge, .switch .track, .progress) { box-shadow: var(--clay-in); }
+[data-style="clay"] .search form { box-shadow: var(--clay-in); }
+[data-style="clay"] #page :is(.panel, .digit, .key, .wx-pill, .raised-btn, .accent-btn, .cal-page, .week), [data-style="clay"] :is(.settings, .modal, .palette, .menu, .tile, .widget-tile, .set-card, .raised-btn, .accent-btn, .seg-pill, .nav-pill) { border-bottom-width: 1px; }
+[data-style="clay"] #page .panel, [data-style="clay"] .settings { border-radius: 26px; }
+[data-style="clay"] #page .digit { border-radius: calc(26px * var(--clock-scale)); font-weight: 700; }
+[data-style="clay"] #page .digit::after { display: none; }
+[data-style="clay"] #page .key { border-radius: 24px; }
+[data-style="clay"] .well { border-radius: 16px; }
+[data-style="clay"] :is(.raised-btn, .accent-btn, .ghost, .wx-pill, .chip-btn, .nav-pill, .nav-item, .seg, .seg-pill, .seg button, .search form) { border-radius: 999px; }
+[data-style="clay"] .square { border-radius: 50%; }
+[data-style="clay"] :is(.tile, .widget-tile, .set-card) { border-radius: 18px; }
+[data-style="clay"] :is(.tile.on, .widget-tile.on, .chip-btn.on) { box-shadow: var(--clay-in); color: var(--accent-text); }

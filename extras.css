@@ -1,0 +1,99 @@
+/* Optional widgets, the palette and arrange mode. Loaded only when used. */
+
+input[type="range"] {
+  --p: 50%;
+  appearance: none; width: 100%; height: 22px; margin: 0; background: transparent; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 10px; border-radius: 6px; border: 1px solid transparent; border-top-width: 2px;
+  background: linear-gradient(90deg, var(--accent) var(--p), var(--inset-fill) var(--p)) padding-box, var(--inset-edge) border-box;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%;
+  border: 1px solid transparent; border-bottom-width: 3px;
+  background: var(--raised-fill) padding-box, var(--raised-edge) border-box;
+  box-shadow: var(--soft-shadow);
+}
+input[type="range"]:active::-webkit-slider-thumb { scale: .9; }
+
+.text-in { display: flex; align-items: center; height: 38px; padding: 0 12px; }
+
+/* tasks */
+.tasks { width: 100%; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.task-list { display: flex; flex-direction: column; gap: 2px; max-height: 240px; overflow-y: auto; }
+.task { display: flex; align-items: center; gap: 9px; min-height: 34px; padding: 2px 4px; border-radius: 8px; }
+.task:hover { background: var(--hover); }
+.task > span { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; user-select: text; }
+.task.done > span { color: var(--faint); text-decoration: line-through; }
+.tick { flex: none; width: 20px; height: 20px; padding: 0; display: grid; place-items: center; font-size: 10px; color: #fff; border: 1px solid transparent; border-top-width: 2px; border-radius: 6px; background: linear-gradient(var(--inset-fill), var(--inset-fill)) padding-box, var(--inset-edge) border-box; }
+.tick.on { border-width: 1px 1px 2px; background: var(--accent-fill) padding-box, var(--accent-edge) border-box; }
+.task-del.ghost.square { width: 24px; height: 24px; font-size: 9px; opacity: 0; }
+.task:hover .task-del { opacity: 1; }
+.tasks > .ghost { align-self: flex-start; }
+
+/* sounds */
+.ambient { width: 100%; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+.sound-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip-btn { height: 30px; padding: 0 10px; font-size: 12px; color: var(--muted); border: 1px solid transparent; border-bottom-width: 3px; border-radius: 9px; background: var(--raised-fill) padding-box, var(--raised-edge) border-box; }
+.chip-btn.on { color: var(--text); font-weight: 600; background: var(--raised-fill) padding-box, var(--accent-edge) border-box; }
+.ambient-row { display: flex; align-items: center; gap: 10px; }
+
+/* countdown */
+.countdown { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px 10px 10px; }
+.cd-num { flex: none; min-width: 52px; height: 52px; padding: 0 8px; display: grid; place-items: center; border-bottom-width: 4px; font: 650 24px/1 "Segoe UI Variable Display", "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+.cd-text { display: flex; flex-direction: column; min-width: 0; }
+.cd-text small { color: var(--muted); font-size: 11.5px; }
+.cd-text b { font-weight: 650; font-size: 14px; overflow-wrap: anywhere; }
+
+/* progress */
+.progress-card { width: 100%; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.pr-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.pr-head b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* month calendar */
+.cal-pop { position: fixed; z-index: 45; width: 310px; padding: 10px 12px 12px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.cal-head b { font-weight: 650; font-size: 14px; text-transform: capitalize; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.cal-grid.weeks { grid-template-columns: 26px repeat(7, 1fr); }
+.cal-h { color: var(--faint); font-size: 10.5px; font-weight: 600; padding: 4px 0; }
+.cal-wk { color: var(--faint); font-size: 10.5px; align-self: center; font-variant-numeric: tabular-nums; }
+.cal-d { height: 34px; display: grid; place-items: center; border: 1px solid transparent; border-bottom-width: 3px; border-radius: 9px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.cal-d.out { color: var(--faint); opacity: .55; }
+.cal-d.today { color: #fff; font-weight: 700; background: var(--accent-fill) padding-box, var(--accent-edge) border-box; box-shadow: var(--soft-shadow); }
+
+/* palette */
+.palette { position: fixed; z-index: 75; top: 16vh; left: 50%; width: 600px; max-width: calc(100vw - 32px); margin-left: min(-300px, calc(-50vw + 16px)); padding: 8px; display: flex; flex-direction: column; gap: 6px; transform-origin: 50% 0; }
+.pal-input { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px; color: var(--faint); }
+.pal-input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font-size: 16px; user-select: text; }
+.pal-input input::placeholder { color: var(--faint); }
+.pal-list { max-height: 46vh; overflow-y: auto; display: flex; flex-direction: column; gap: 1px; border-top: 1px solid var(--divider); padding-top: 6px; }
+.pal-list:empty { display: none; }
+.pal-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 38px; padding: 6px 12px; border: 0; border-radius: 9px; background: none; text-align: start; }
+.pal-item .icon { flex: none; color: var(--muted); font-size: 14px; }
+.pal-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-item small { flex: none; max-width: 40%; color: var(--faint); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pal-item:hover { background: var(--hover); }
+.pal-item.sel { background: var(--raised-fill) padding-box, var(--raised-edge) border-box; }
+
+/* arrange mode */
+[data-arrange] .zone { display: flex; min-height: 84px; padding: 8px; border-radius: 16px; outline: 1.5px dashed var(--faint); outline-offset: -1px; background: color-mix(in srgb, var(--win) 40%, transparent); transition: background .12s; }
+[data-arrange] .zone.over { outline-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+[data-arrange] .zone > .w { cursor: grab; border-radius: 16px; }
+[data-arrange] .zone > .w:hover { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-arrange] .zone > .w * { pointer-events: none; }
+.arrange-bar { position: fixed; z-index: 66; top: 14px; left: 0; right: 0; width: fit-content; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 16px; white-space: nowrap; }
+.arrange-bar b { font-weight: 650; }
+.arrange-bar > span { color: var(--muted); font-size: 12px; }
+.arrange-ghost { position: fixed; z-index: 90; pointer-events: none; scale: 1.03; margin: 0; filter: drop-shadow(0 12px 22px rgba(0,0,0,.4)); }
+[data-arrange] :is(.col, .hero, .zone, .zone > .w, .links, .keys) { flex-shrink: 0; }
+[data-arrange] .zone { height: auto; gap: 18px; padding: 16px 10px 10px; }
+[data-arrange] .zone > .w { position: relative; padding: 8px; outline: 1px solid color-mix(in srgb, var(--text) 26%, transparent); outline-offset: -1px; background: color-mix(in srgb, var(--win) 22%, transparent); }
+[data-arrange] .zone > .w::before { content: attr(data-label); position: absolute; z-index: 3; top: -10px; left: 10px; padding: 1px 8px 2px; border-radius: 999px; background: var(--text); color: var(--win); font: 600 11px "Segoe UI", sans-serif; text-shadow: none; white-space: nowrap; }
+[data-arrange] .zone > .w:hover::before { background: var(--accent); color: #fff; }
+[data-arrange] .hero { padding-top: 0; margin-block: 0; }
+[data-arrange] .col { gap: 8px; }
+[data-arrange] .col-mid { min-height: 0; }
+[data-arrange] #page { padding-top: calc(86px / var(--ui-zoom, 1)); padding-bottom: 24px; row-gap: 8px; }
+[data-arrange] .zone:empty { min-height: 56px; }
+[data-plainaccent] [data-arrange] .zone > .w:hover::before, [data-plainaccent] body[data-arrange] .zone > .w:hover::before { color: #111113; }

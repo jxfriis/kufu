@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Kufu",
+  "short_name": "Kufu",
+  "version": "1.2.0",
+  "description": "A very fast, beautiful new tab page with raised 3D surfaces and spring motion.",
+  "icons": { "16": "icons/icon-16.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "chrome_url_overrides": { "newtab": "newtab.html" },
+  "action": { "default_title": "Kufu" },
+  "background": { "service_worker": "sw.js" },
+  "offline_enabled": true,
+  "permissions": ["storage", "favicon", "search"],
+  "optional_permissions": ["bookmarks", "topSites", "tabs", "history"],
+  "optional_host_permissions": ["https://duckduckgo.com/*"]
+}

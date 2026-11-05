@@ -1,0 +1,34 @@
+/* Loaded only while the paper design is in use. */
+[data-style="paper"][data-theme="dark"] {
+  --raised-fill: linear-gradient(rgb(26 28 32 / var(--sf, 1)), rgb(26 28 32 / var(--sf, 1)));
+  --raised-fill-hover: linear-gradient(rgb(34 37 42 / var(--sf, 1)), rgb(34 37 42 / var(--sf, 1)));
+  --raised-edge: linear-gradient(#30343A, #30343A);
+  --panel-fill: linear-gradient(rgb(19 21 24 / var(--sf, 1)), rgb(19 21 24 / var(--sf, 1)));
+  --panel-edge: linear-gradient(#272B30, #272B30);
+  --inset-fill: rgb(14 15 18 / var(--sf, 1));
+  --inset-edge: linear-gradient(#272B30, #272B30);
+  --accent-fill: linear-gradient(#FF5436, #FF5436);
+  --accent-fill-hover: linear-gradient(#FF6A50, #FF6A50);
+  --accent-edge: linear-gradient(#FF5436, #FF5436);
+  --panel-shadow: none; --soft-shadow: none;
+  --panel-solid: linear-gradient(#131518, #131518); --edge-solid: linear-gradient(#272B30, #272B30);
+}
+[data-style="paper"][data-theme="light"] {
+  --raised-fill: linear-gradient(rgb(255 255 255 / var(--sf, 1)), rgb(255 255 255 / var(--sf, 1)));
+  --raised-fill-hover: linear-gradient(rgb(246 245 241 / var(--sf, 1)), rgb(246 245 241 / var(--sf, 1)));
+  --raised-edge: linear-gradient(#E1DFD9, #E1DFD9);
+  --panel-fill: linear-gradient(rgb(252 251 249 / var(--sf, 1)), rgb(252 251 249 / var(--sf, 1)));
+  --panel-edge: linear-gradient(#E1DFD9, #E1DFD9);
+  --inset-fill: rgb(242 241 237 / var(--sf, 1));
+  --inset-edge: linear-gradient(#E1DFD9, #E1DFD9);
+  --accent-fill: linear-gradient(#E8472A, #E8472A);
+  --accent-fill-hover: linear-gradient(#F05A3E, #F05A3E);
+  --accent-edge: linear-gradient(#E8472A, #E8472A);
+  --panel-shadow: none; --soft-shadow: none;
+  --panel-solid: linear-gradient(#FCFBF9, #FCFBF9); --edge-solid: linear-gradient(#E1DFD9, #E1DFD9);
+}
+[data-style="paper"] #page :is(.raised, .panel, .inset, .raised-btn, .accent-btn, .key, .digit, .day, .wx-pill, .avatar, .seg-pill, .badge, .progress .fill, .tick, .chip-btn),
+[data-style="paper"] :is(.settings, .tile, .widget-tile, .nav-pill, .set-card, .menu, .modal, .raised-btn, .accent-btn, .ghost:hover, .seg-pill, .switch .track, .switch .knob) { border-width: 1px !important; }
+[data-style="paper"] .digit { font-weight: 500; }
+[data-style="paper"] .digit::after { display: none; }
+[data-style="paper"] .quote-text { font-weight: 400; }

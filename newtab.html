@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <title>New tab</title>
+  <link rel="icon" href="icons/icon-48.png">
+  <link rel="preload" href="fonts/sunghyun-400-0.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/sunghyun-600-0.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/sunghyun-700-0.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script src="motion.js"></script>
+  <script src="core.js"></script>
+</head>
+<body>
+  <div id="stage">
+    <div id="bg" aria-hidden="true">
+      <div class="bg-layer" id="bgA"></div>
+      <div class="bg-layer" id="bgB"></div>
+    </div>
+    <div id="texture" aria-hidden="true"></div>
+    <div id="grainDark" aria-hidden="true"></div>
+  </div>
+  <main id="page"></main>
+  <div id="credit"></div>
+  <button class="raised-btn square" id="gear" title="Settings (Esc)"><i class="icon">&#xE713;</i></button>
+  <div id="scrim" class="scrim" hidden></div>
+  <div id="toasts" class="toasts"></div>
+  <script src="widgets.js"></script>
+</body>
+</html>

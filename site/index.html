@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kufu: a better new tab for Chrome</title>
+  <meta name="description" content="Kufu is a fast, private new tab page for Chrome. Clock, calendar, weather, links and focus tools, arranged your way. Free download.">
+  <meta name="theme-color" content="#0A0B0D">
+  <meta property="og:title" content="Kufu: a better new tab for Chrome">
+  <meta property="og:description" content="Fast, private and yours to arrange. Free download.">
+  <meta property="og:image" content="shots/glass.webp">
+  <link rel="icon" href="icon-128.png">
+  <link rel="preload" href="fonts/sunghyun-700-0.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="kufu.css">
+</head>
+<body>
+  <div class="grain add" aria-hidden="true"></div>
+  <div class="grain sub" aria-hidden="true"></div>
+
+  <header class="top">
+    <a class="brand" href="#top"><img src="icon-128.png" alt="" width="30" height="30"><span>Kufu</span></a>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/jxfriis/kufu">GitHub</a>
+    </nav>
+    <a class="accent-btn small" href="https://github.com/jxfriis/kufu/releases/latest/download/kufu.zip">Download</a>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="clock" id="clock" role="img" aria-label="A live clock made of raised keys"></div>
+      <h1>A better new tab.</h1>
+      <p class="lede">Kufu opens in about a tenth of a second and puts your clock, calendar, weather and links exactly where you want them. No account, no ads.</p>
+      <div class="cta">
+        <a class="accent-btn big" href="https://github.com/jxfriis/kufu/releases/latest/download/kufu.zip">Download for Chrome</a>
+        <a class="raised-btn big" href="#install">How to install</a>
+      </div>
+      <p class="fine">Free. Windows, macOS and Linux. Works in Chrome and other Chromium browsers.</p>
+    </section>
+
+    <section class="showcase" aria-label="The four designs">
+      <div class="seg inset" id="designs" role="group" aria-label="Choose a design">
+        <div class="seg-pill"></div>
+        <button class="on" aria-pressed="true" data-shot="keys">Keys</button>
+        <button aria-pressed="false" data-shot="glass">Glass</button>
+        <button aria-pressed="false" data-shot="paper">Paper</button>
+        <button aria-pressed="false" data-shot="clay">Clay</button>
+      </div>
+      <figure class="frame panel">
+        <img id="shot" src="shots/keys.webp" width="1440" height="900" alt="Kufu in the Keys design: a clock of raised keys, a week calendar, search and quick links on a dark background.">
+      </figure>
+      <p class="caption" id="caption">Keys: every digit and link is a physical key that squashes and springs back.</p>
+    </section>
+
+    <section class="meaning">
+      <span class="kanji" lang="ja">工夫</span>
+      <p><strong>Kufu</strong> is Japanese for ingenuity: finding a better way. Keep what you use on a new tab, make it instant, and move the rest wherever you like.</p>
+    </section>
+
+    <section id="features">
+      <h2>Everything on one page, in your order</h2>
+      <div class="grid">
+        <article class="card raised"><h3>Move anything</h3><p>Drag the clock, calendar, links and every widget where you want them, or start from a ready-made layout.</p></article>
+        <article class="card raised"><h3>Four designs</h3><p>Raised keys, flat paper, soft clay, or liquid glass that bends your wallpaper. Light and dark for each.</p></article>
+        <article class="card raised"><h3>Your wallpaper</h3><p>Use an Unsplash collection, your own photos or videos, or plain dark. Dim it and add real film grain.</p></article>
+        <article class="card raised"><h3>A clock with options</h3><p>Keys, plain, glass numbers or analog, with five calendar styles and world clocks. Set the size and weight.</p></article>
+        <article class="card raised"><h3>Weather at a glance</h3><p>A small pill that opens into the full forecast, with six styles of animated icons.</p></article>
+        <article class="card raised"><h3>Quick links</h3><p>Links as keys, with folders and groups. Import your bookmarks or save your open tabs in one click.</p></article>
+        <article class="card raised"><h3>Focus tools</h3><p>Pomodoro, tasks, notes, countdowns, progress bars and ambient sounds. All off until you want them.</p></article>
+        <article class="card raised"><h3>Command palette</h3><p>Press Ctrl K to search your links, run actions, do math and convert units.</p></article>
+        <article class="card raised"><h3>Profiles</h3><p>Keep separate setups for work and home, and switch by hand or by the time of day.</p></article>
+      </div>
+    </section>
+
+    <section class="facts">
+      <div class="fact panel"><b>~0.1 s</b><span>until the clock is on screen, measured in a test browser. Your computer will vary.</span></div>
+      <div class="fact panel"><b>46</b><span>interface languages, with some newer labels still in English.</span></div>
+      <div class="fact panel"><b>0</b><span>accounts, trackers and ads.</span></div>
+    </section>
+
+    <section class="privacy">
+      <h2>Your new tab stays yours</h2>
+      <p>Kufu keeps your settings in your browser and, if you want, syncs them through your own Chrome account. It asks for extra permissions only when you turn on a feature that needs them.</p>
+      <p>A few features talk to other services when you use them: weather comes from Open-Meteo, wallpapers from Unsplash, custom fonts from Google Fonts, and search suggestions from DuckDuckGo.</p>
+    </section>
+
+    <section id="install" class="install">
+      <h2>Install in three steps</h2>
+      <p class="note">Kufu isn't in the Chrome Web Store yet, so you add it by hand. It takes about a minute.</p>
+      <ol>
+        <li class="step raised"><span class="num inset">1</span><div><h3>Download and unzip</h3><p><a href="https://github.com/jxfriis/kufu/releases/latest/download/kufu.zip">Download kufu.zip</a> and unzip it somewhere it can stay, because Chrome keeps reading from that folder.</p></div></li>
+        <li class="step raised"><span class="num inset">2</span><div><h3>Turn on Developer mode</h3><p>Open <code>chrome://extensions</code> and switch on Developer mode in the top right corner.</p></div></li>
+        <li class="step raised"><span class="num inset">3</span><div><h3>Load it</h3><p>Click <strong>Load unpacked</strong>, choose the unzipped folder, and open a new tab.</p></div></li>
+      </ol>
+      <a class="accent-btn big" href="https://github.com/jxfriis/kufu/releases/latest/download/kufu.zip">Download for Chrome</a>
+    </section>
+  </main>
+
+  <footer>
+    <p><strong>Kufu</strong> is open on <a href="https://github.com/jxfriis/kufu">GitHub</a>.</p>
+    <p class="credits">Set in <a href="https://github.com/anaclumos/sunghyun-sans">Sunghyun Sans</a> (SIL OFL). Glass follows <a href="https://github.com/Glass-HQ/liquid-glass">liquid-glass</a> (MIT). Inspired by <a href="https://github.com/victrme/Bonjourr">Bonjourr</a>, whose translations it uses (GPL-3.0). Weather by <a href="https://open-meteo.com">Open-Meteo</a>. Screenshot photo from <a href="https://unsplash.com">Unsplash</a>.</p>
+  </footer>
+
+  <script src="motion.js"></script>
+  <script src="kufu.js"></script>
+</body>
+</html>
