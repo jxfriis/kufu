@@ -79,7 +79,7 @@ const GlassDigits = {
     if (!this.filters.has(id)) {
       this.filters.add(id);
       const tone = this.tone(dark, S.clock.glassfrost / 100);
-      // the repo's refraction is written for surfaces hundreds of px wide, so it scales to the digit's lens: scale = 2 x amount
+      // the refraction is written for surfaces hundreds of px wide, so it scales to the digit's lens: scale = 2 x amount
       const scale = 2 * refraction * parseFloat(cs.fontSize) / 780;
       this.svg.insertAdjacentHTML('beforeend', `<filter id="${id}" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">`
         + (blur ? `<feGaussianBlur in="SourceGraphic" stdDeviation="${blur}" result="b"/>` : '')
@@ -154,7 +154,7 @@ const GlassDigits = {
       F.data[p] = 127.5 - nx * bend * 127.5;
       F.data[p + 1] = 127.5 - ny * bend * 127.5;
       F.data[p + 2] = 128;
-      // maps.wgsl: specular only where the edge faces up or down, a soft inner light, shade down the sides. No drawn lines.
+      // specular only where the edge faces up or down, a soft inner light, shade down the sides. No drawn lines.
       const inside = (d - .5) / dpr / Math.max(1, em / 90), aa = 1.1, ay = Math.abs(ny), spread = 1.08;
       const dir = Math.pow(sat((ay - Math.cos(spread)) / (1 - Math.cos(spread))), 1.25);
       const dif = Math.pow(sat((ay - Math.cos(spread * .65)) / (1 - Math.cos(spread * .65))), 1.25);
@@ -190,7 +190,7 @@ const GlassDigits = {
     const mask = g.canvas.toDataURL('image/png');
     return { mask, rim: rim.canvas.toDataURL('image/png'), glow: glowCtx.canvas.toDataURL('image/png'), field: smooth.canvas.toDataURL('image/png') };
   },
-  // material-graph.ts: the Clear curve at 0%, the Regular curve at 100%
+  // the Clear curve at 0%, the Regular curve at 100%
   tone(dark, frost) {
     const out = [];
     const [lift, roll] = [.18, 0], [a, c, q, keep] = dark ? [.105, .83, -.2091, .9] : [.36, .67, -.1113, .8];

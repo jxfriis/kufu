@@ -94,3 +94,6 @@
 [data-style="glass"][data-theme="dark"] :is(.weather, .wx-pill) { --muted: #FFFFFF; --faint: #FFFFFF; }
 [data-style="glass"][data-theme="dark"] .accent-btn, [data-style="glass"][data-theme="dark"][data-plainaccent] .accent-btn { color: #FFFFFF !important; }
 [data-style="glass"] :is(.wx-pill, .wx-pill *, #gear, #gear .icon, #gear:hover) { color: #FFFFFF; }
+[data-style="glass"] #page .key .name { color: #FFFFFF !important; }
+[data-style="glass"] #page :is(.day:not(.today), .day:not(.today) b, .day:not(.today) small, .day.past b, .mm-grid span:not(.today), .mm-grid .past, .mm-grid i) { color: #FFFFFF !important; }
+[data-style="glass"][data-theme="dark"] :is(.cal-d:not(.today), .cal-pop .mm-grid span:not(.today), .cal-pop .mm-grid i) { color: #FFFFFF !important; }

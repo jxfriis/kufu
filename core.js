@@ -59,7 +59,7 @@ const DEFAULTS = {
   },
   clock: {
     on: true, style: 'tiles', ampm: false, ampmlabel: true, seconds: false, size: 100, timezone: 'auto',
-    analog: false, shape: 'round', face: 'marks', hands: 'modern', dialbg: '', dialborder: '',
+    color: '', analog: false, shape: 'round', face: 'marks', hands: 'modern', dialbg: '', dialborder: '',
     worldon: false, world: [], blink: false, seam: true, weight: 0, glassfrost: 0, glassrefraction: 60,
   },
   date: { on: true, style: 'rail', format: 'auto', week: true, weeknum: false, firstday: 'auto' },
@@ -193,16 +193,17 @@ const Profiles = {
 };
 Profiles.auto();
 
-/* ---------- translations: same English-keyed files as Bonjourr ---------- */
-const LANGS = { en: 'English', ar: 'العربية', az: 'Azərbaycan', be: 'Беларуская', bn: 'বাংলা', ca: 'Català', cs: 'Čeština', da: 'Dansk', de: 'Deutsch', el: 'Ελληνικά', es: 'Español', fa: 'فارسی', fi: 'Suomi', fr: 'Français', he: 'עברית', hi: 'हिन्दी', hr: 'Hrvatski', hu: 'Magyar', hy: 'Հայերեն', id: 'Indonesia', is: 'Íslenska', it: 'Italiano', ja: '日本語', ko: '한국어', mr: 'मराठी', mt: 'Malti', 'nan-Hant-TW': '閩南語', nb: 'Norsk', nl: 'Nederlands', pl: 'Polski', 'pt-BR': 'Português (BR)', 'pt-PT': 'Português (PT)', ro: 'Română', ru: 'Русский', sk: 'Slovenčina', sr: 'Српски', 'sr-YU': 'Srpski', sv: 'Svenska', te: 'తెలుగు', tr: 'Türkçe', uk: 'Українська', uz: 'Oʻzbek', vi: 'Tiếng Việt', 'zh-CN': '简体中文', 'zh-HK': '繁體中文 (HK)', 'zh-TW': '繁體中文 (TW)' };
+/* ---------- translations: one file per language, keyed by the English text ---------- */
+const LANGS = { en: 'English', da: 'Dansk', de: 'Deutsch', es: 'Español', fr: 'Français', ja: '日本語', ko: '한국어', 'pt-BR': 'Português (Brasil)', 'zh-CN': '简体中文' };
+const LANG_ALIAS = { pt: 'pt-BR', zh: 'zh-CN' };
 function resolveLang() {
-  if (S.lang !== 'auto') return S.lang;
-  const nav = navigator.language || 'en';
-  return LANGS[nav] ? nav : LANGS[nav.split('-')[0]] ? nav.split('-')[0] : 'en';
+  if (S.lang !== 'auto' && LANGS[S.lang]) return S.lang;   // a language that was since removed falls back to the browser's
+  const nav = navigator.language || 'en', base = nav.split('-')[0];
+  return LANGS[nav] ? nav : LANGS[base] ? base : LANG_ALIAS[base] || 'en';
 }
 let LANG = resolveLang();
 let TR = LANG === 'en' ? null : (readJSON('fs.tr') || {});
-const I18N_VERSION = 12;   // raise when i18n/ changes, so saved copies refresh
+const I18N_VERSION = 13;   // raise when i18n/ changes, so saved copies refresh
 if (TR && (TR.lang !== LANG || TR.v !== I18N_VERSION)) TR = null;
 const t = s => TR?.[s] || s;
 async function loadTranslations() {
@@ -238,7 +239,7 @@ function loadDesign(name) {
 }
 
 const VAR_HOME = {
-  '--clock-base': () => Clock.el, '--clock-weight': () => Clock.el, '--greeting-size': () => Greeting.el,
+  '--clock-base': () => Clock.el, '--clock-weight': () => Clock.el, '--clock-color': () => Clock.el, '--greeting-size': () => Greeting.el,
   '--search-width': () => Search.el, '--search-height': () => Search.el, '--search-opacity': () => Search.el,
   '--notes-width': () => Notes.el, '--notes-opacity': () => Notes.el, '--key-row': () => Links.el,
 };
@@ -254,6 +255,7 @@ function setVar(name, value) {
 }
 
 function applyPage() {
+  const gear = $('gear'); if (gear) gear.title = t('Settings') + ' (Esc)';
   loadDesign(S.style);
   const root = document.documentElement, st = root.style;
   const dark = S.dark === 'dark' || (S.dark === 'system' && systemDark()) || (S.dark === 'auto' && isNight());
@@ -276,6 +278,9 @@ function applyPage() {
   root.toggleAttribute('data-clockweight', S.clock.weight > 0);
   setVar('--clock-weight', S.clock.weight || 700);
   setVar('--clock-base', S.clock.size / 100);
+  const clockTint = S.clock.color && S.style !== 'glass' && S.clock.style !== 'glass';
+  root.toggleAttribute('data-clockcolor', !!clockTint);
+  if (clockTint) setVar('--clock-color', S.clock.color);
   setVar('--greeting-size', S.greeting.size + 'px');
   setVar('--search-width', S.search.width + '%');
   setVar('--search-height', S.search.height + 'px');
@@ -335,7 +340,7 @@ function applyMotionPref() {
 
 const MotionPlain = { ...Motion, Ease: { ...Motion.Ease } };
 let MotionLiquid = null;
-// liquid-glass's spring: perceptual duration and bounce, solved exactly and sampled into a CSS linear() easing
+// the glass spring: perceptual duration and bounce, solved exactly and sampled into a CSS linear() easing
 function liquidSpring(duration, bounce) {
   const w = 2 * Math.PI / duration, z = 1 - bounce, wd = w * Math.sqrt(Math.max(1 - z * z, 0));
   const at = t => (bounce === 0 ? 1 - Math.exp(-w * t) * (1 + w * t) : 1 - Math.exp(-z * w * t) * (Math.cos(wd * t) + (z * w / wd) * Math.sin(wd * t)));

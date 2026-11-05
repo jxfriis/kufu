@@ -41,7 +41,7 @@ if (!still) slots.forEach((slot, i) => Motion.popIn(slot, i * 60));
 /* the design switcher */
 const CAPTIONS = {
   keys: ['Keys: every digit and link is a physical key that squashes and springs back.', 'a clock of raised keys, a week calendar, search and quick links on a dark background'],
-  glass: ['Glass: clear surfaces that bend the wallpaper behind them, with springs to match.', 'liquid glass clock numbers and panels over a photo'],
+  glass: ['Glass: clear surfaces that bend the wallpaper behind them, with springs to match.', 'glass clock numbers and panels over a photo'],
   paper: ['Paper: flat and quiet, with thin lines instead of depth.', 'flat panels with thin outlines'],
   clay: ['Clay: soft, pillowy shapes pressed from the background itself.', 'soft shapes in the same color as the background'],
 };

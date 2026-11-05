@@ -1,7 +1,5 @@
 'use strict';
-// Liquid glass, ported from Glass-HQ/liquid-glass (MIT): the same field and rim formulas as its maps.wgsl and the same
-// tone curves, but computed once here into small PNGs, with Chromium's backdrop-filter doing the rest. No WebGPU, no React.
-// Only loaded in the Glass design, and only after first paint, so every other new tab pays nothing.
+// Glass: bends the picture behind a surface at its edges and lights its rim.
 
 const Glass = {
   panes: '#page .panel, .cal-page, #page .digit:not(.gd), #page .key:not(.add), .wx-pill, .search form, #gear, #page .week, .wx-pop, .cal-pop, .folder-pop, .suggest, .toast, .arrange-bar, .menu, .palette, .modal, .settings',

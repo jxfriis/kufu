@@ -6,7 +6,7 @@ const idle = fn => (globalThis.requestIdleCallback ? requestIdleCallback(fn, { t
 const pad = n => String(n).padStart(2, '0');
 const COLORS = ['#FF8A70', '#7FB5FF', '#3DD68C', '#FFC48A', '#C6A2FF', '#FF9CCB', '#6FD6D6', '#E6D36A'];
 const colorFor = s => COLORS[[...String(s)].reduce((a, c) => a + c.charCodeAt(0), 0) % COLORS.length];
-const locale = () => (LANG === 'nan-Hant-TW' ? 'zh-TW' : LANG === 'sr-YU' ? 'sr-Latn' : LANG);
+const locale = () => LANG;
 const zone = tz => (tz && tz !== 'auto' ? tz : undefined);
 
 /* ---------- clock ---------- */
@@ -489,7 +489,7 @@ const Quote = {
     }
     const item = list[C.quote.i];
     const text = h('div', { class: 'quote-text' });
-    if (item) item[0].split(/(?<= )/).forEach((w, i) => {
+    if (item) t(item[0]).split(/(?<= )/).forEach((w, i) => {
       const s = h('span', { text: w });
       text.append(s);
       if (animate) Motion.enter(s, 0, 8, 220 + Math.min(i, 24) * 22);
@@ -509,7 +509,7 @@ const Quote = {
           this.build(false);
           Motion.pop(this.el.querySelector('.quote-foot .ghost'), .6);
         } }, icon(isFav ? 'EB52' : 'EB51')) : null,
-        h('button', { class: 'ghost', title: t('Copy'), onclick: e => { navigator.clipboard.writeText(`${item?.[0] || ''}${who ? ' — ' + who : ''}`); Motion.pop(e.currentTarget, .8); UI.toast(t('Copied')); } }, icon('E8C8')),
+        h('button', { class: 'ghost', title: t('Copy'), onclick: e => { navigator.clipboard.writeText(`${item ? t(item[0]) : ''}${who ? ' — ' + who : ''}`); Motion.pop(e.currentTarget, .8); UI.toast(t('Copied')); } }, icon('E8C8')),
         h('button', { class: 'ghost', title: t('New quote'), onclick: () => { this.build(true, true); Motion.pop(this.el.firstChild, .97); } }, icon('E72C'))),
     );
     this.el.replaceChildren(card);

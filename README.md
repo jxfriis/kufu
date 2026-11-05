@@ -30,7 +30,6 @@ requests an hour; loading a collection uses up to 5 per collection and the list 
 suggestions are requested only when you turn them on. Weather comes from Open-Meteo.
 
 ## License
-GPL-3.0, see `LICENSE`, because the translations in `i18n/` come from [Bonjourr](https://github.com/victrme/Bonjourr) (GPL-3.0).
+GPL-3.0, see `LICENSE`. Third-party notices are in `licenses/`.
 
-- Font: [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans), SIL OFL 1.1, see `fonts/LICENSE`.
-- Glass: follows [liquid-glass](https://github.com/Glass-HQ/liquid-glass), MIT, see `licenses/liquid-glass.txt`.
+Font: [Sunghyun Sans](https://github.com/anaclumos/sunghyun-sans), SIL OFL 1.1, see `fonts/LICENSE`.

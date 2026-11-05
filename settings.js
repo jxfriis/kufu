@@ -610,6 +610,7 @@ function buildPages() {
       rows: [
         { type: 'switch', key: 'clock.on', label: 'Show clock' },
         { type: 'tiles', key: 'clock.analog', label: 'Clock type', cols: 2, when: isOn('clock.on'), options: [{ value: false, label: 'Digital', icon: 'E917' }, { value: true, label: 'Analog', icon: 'E823' }], after: () => Settings.rebuild() },
+        { type: 'color', key: 'clock.color', label: 'Clock color', when: () => S.clock.on && S.style !== 'glass' && (S.clock.analog || S.clock.style !== 'glass'), clearable: true, fallback: '#ffffff' },
         { type: 'seg', key: 'clock.style', label: 'Digital style', when: () => S.clock.on && !S.clock.analog, options: [{ value: 'tiles', label: 'Keys' }, { value: 'plain', label: 'Plain' }, { value: 'glass', label: 'Glass' }] },
         { type: 'range', key: 'clock.glassfrost', label: 'Frosted', min: 0, max: 100, step: 5, unit: '%', hint: '0% is clear glass. 100% is fully frosted.', when: () => S.clock.on && !S.clock.analog && S.clock.style === 'glass' },
         { type: 'range', key: 'clock.glassrefraction', label: 'Refraction', min: 0, max: 120, hint: 'How strongly the numbers bend the picture behind them.', when: () => S.clock.on && !S.clock.analog && S.clock.style === 'glass' },
@@ -1085,7 +1086,7 @@ function buildManagement() {
     file.value = '';
   } });
   const url = h('input', { type: 'text', placeholder: 'https://…/settings.json', spellcheck: false });
-  const token = h('input', { type: 'password', value: localStorage.getItem('fs.gist') || '', placeholder: 'GitHub token with gist scope', autocomplete: 'off', onchange: () => localStorage.setItem('fs.gist', token.value.trim()) });
+  const token = h('input', { type: 'password', value: localStorage.getItem('fs.gist') || '', placeholder: t('GitHub token with gist scope'), autocomplete: 'off', onchange: () => localStorage.setItem('fs.gist', token.value.trim()) });
   const gistBox = h('div', { class: 'set-group' },
     h('div', { class: 'text-in inset' }, token),
     h('div', { class: 'set-line' },
