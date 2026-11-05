@@ -201,7 +201,6 @@ const DateW = {
       }
       const card = h('div', { class: 'mini-month panel', title: t('Open calendar'), onclick: () => open(card) }, h('div', { class: 'mm-head' }, h('b', { text: month }), h('span', { text: weekday })), grid);
       this.el.replaceChildren(card);
-      if (animate) Motion.popIn(today, 420);
       return;
     }
     if (d.style === 'dots') {
@@ -209,7 +208,6 @@ const DateW = {
       const dots = h('div', { class: 'week-dots' }, Array.from({ length: 7 }, (_, i) => h('i', { class: i === offset ? 'today' : i < offset ? 'past' : '' })));
       const box = h('div', { class: 'date stack', title: t('Open calendar'), onclick: () => open(box) }, line, dots);
       this.el.replaceChildren(box);
-      if (animate) [...dots.children].forEach((x, i) => Motion.popIn(x, 200 + i * 40));
       return;
     }
     if (d.style === 'line') {
@@ -231,9 +229,8 @@ const DateW = {
         if (i === offset) todayEl = el;
         rail.append(el);
       }
-      if (d.weeknum) box.append(h('div', { class: 'weeknum raised', text: `${t('Week')} ${isoWeek(now)}` }));
+      if (d.weeknum) box.append(h('div', { class: 'weeknum inset', text: `${t('Week')} ${isoWeek(now)}` }));
       box.append(rail);
-      if (animate) Motion.popIn(todayEl, 420);
     }
     this.el.replaceChildren(box);
     this.key = now.toDateString();
@@ -243,6 +240,15 @@ const DateW = {
 /* ---------- greeting: says hello, then says something useful about right now ---------- */
 const Greeting = {
   el: h('div', { class: 'w', 'data-w': 'greeting' }),
+  // where the sun is today, on a thin arc: real sunrise and sunset once the weather knows them
+  arc() {
+    const now = new Date(), d = C.weather?.data?.daily;
+    const up = d?.sunrise?.[0] && Math.abs(+new Date(d.sunrise[0]) - now) < 864e5 ? +new Date(d.sunrise[0]) : new Date(now).setHours(6, 30, 0, 0);
+    const down = d?.sunset?.[0] && Math.abs(+new Date(d.sunset[0]) - now) < 864e5 ? +new Date(d.sunset[0]) : new Date(now).setHours(19, 0, 0, 0);
+    const day = +now >= up && +now <= down, f = day ? (now - up) / (down - up) : +now < up ? 0 : 1;
+    const a = Math.PI * f, x = 28 - 22 * Math.cos(a), y = 26 - 20 * Math.sin(a);
+    return `<svg viewBox="0 0 56 32" aria-hidden="true"><path d="M2 26H54" class="g-hz"/><path d="M6 26A22 20 0 0 1 50 26" class="g-path"/><path d="M6 26A22 20 0 0 1 50 26" class="g-done" pathLength="1" stroke-dasharray="${f.toFixed(3)} 1"/>${day ? `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" class="g-glow"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.2" class="g-sunny"/>` : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" class="g-moon"/>`}</svg>`;
+  },
   period() { const n = new Date().getHours(); return n < 5 ? 'night' : n < 12 ? 'morning' : n < 18 ? 'afternoon' : n < 22 ? 'evening' : 'night'; },
   phrase(p) {
     const g = S.greeting, day = Math.floor(Date.now() / 864e5);
@@ -303,12 +309,14 @@ const Greeting = {
     const sub = this.subline();
     const hour = new Date().getHours();
     const badge = g.icon ? h('div', { class: 'g-badge inset', html: scene(0, hour >= 6 && hour < 19) }) : null;
+    const arc = g.icon ? h('div', { class: 'g-arc', html: this.arc() }) : null;
     const line = sub ? h('div', { class: 'g-sub', text: sub }) : null;
     const box = g.design === 'card' ? h('div', { class: 'greeting g-card panel' }, badge, h('div', { class: 'g-text' }, main, line))
       : g.design === 'minimal' ? h('div', { class: 'greeting g-minimal' }, main, line)
       : stacked ? h('div', { class: 'greeting g-stacked' }, main, big, line)
-      : h('div', { class: 'greeting' }, h('div', { class: 'g-title' }, badge, main), line);
-    if (animate && badge?.isConnected !== false && box.contains(badge)) Motion.popIn(badge, 120);
+      : h('div', { class: 'greeting g-classic' }, h('div', { class: 'g-title' }, arc, main), line);
+    if (animate && badge && box.contains(badge)) Motion.popIn(badge, 120);
+    if (animate && arc && box.contains(arc)) Motion.popIn(arc, 120);
     if (animate && line) Motion.enter(line, 0, 8, 380);
     this.el.replaceChildren(box);
   },
@@ -848,15 +856,24 @@ const Weather = {
     if (start < 0) start = 0;
     const temps = d.hourly.temperature_2m.slice(start, start + 25), rain = d.hourly.precipitation_probability.slice(start, start + 25);
     const lo = Math.min(...temps), hi = Math.max(...temps), W = 240, H = 56, span = Math.max(hi - lo, 1);
-    const x = i => i * W / (temps.length - 1), y = v => 8 + (H - 22) * (1 - (v - lo) / span);
+    const x = i => i * W / (temps.length - 1), y = v => 14 + (H - 30) * (1 - (v - lo) / span);
     let path = `M0 ${y(temps[0])}`;
     for (let i = 1; i < temps.length; i++) {
       const mx = (x(i - 1) + x(i)) / 2;
       path += ` C${mx} ${y(temps[i - 1])} ${mx} ${y(temps[i])} ${x(i)} ${y(temps[i])}`;
     }
     const bars = rain.map((r, i) => r > 5 ? `<rect x="${x(i) - 3}" y="${H - r * .14}" width="6" height="${r * .14}" rx="2" fill="#6FB6FF" opacity=".55"/>` : '').join('');
-    const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="wxa" x1="0" y1="0" x2="0" y2="1"><stop style="stop-color:var(--accent)" stop-opacity=".3"/><stop offset="1" style="stop-color:var(--accent)" stop-opacity="0"/></linearGradient></defs>${bars}<path d="${path} L${W} ${H} L0 ${H}Z" fill="url(#wxa)"/><path class="wx-line" pathLength="1" d="${path}" fill="none" style="stroke:var(--accent)" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke"/><circle class="now-ring" cx="${x(0)}" cy="${y(temps[0])}" r="4" fill="none" style="stroke:var(--accent)" stroke-width="1.5"/><circle cx="${x(0)}" cy="${y(temps[0])}" r="3.5" style="fill:var(--accent)"/></svg>`;
-    const rail = h('div', { class: 'wx-rail inset', html: svg });
+    const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="wxt" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="${y(lo + span)}" y2="${y(lo)}"><stop stop-color="#FF5F45"/><stop offset=".5" stop-color="#FFC95C"/><stop offset="1" stop-color="#5DB4FF"/></linearGradient></defs>${bars}<path d="${path} L${W} ${H} L0 ${H}Z" fill="url(#wxt)" fill-opacity=".2"/><path class="wx-line" pathLength="1" d="${path}" fill="none" stroke="url(#wxt)" stroke-width="2.6" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+    // high, low and now are drawn over the graph, so they stay round when it stretches
+    const mark = (i, cls, text) => {
+      const px = Math.min(92, Math.max(8, x(i) / W * 100));
+      return h('span', { class: 'wx-mark ' + cls, style: `left:${px}%;top:${y(temps[i])}px`, text });
+    };
+    const hiAt = temps.indexOf(hi), loAt = temps.indexOf(lo);
+    const nowDot = h('i', { class: 'wx-nowdot', style: `left:0;top:${y(temps[0])}px` });
+    const rail = h('div', { class: 'wx-rail inset' }, h('div', { class: 'wx-plot', html: svg }));
+    rail.firstChild.append(nowDot);
+    if (hi - lo >= 1) rail.firstChild.append(mark(hiAt, 'hi', Math.round(hi) + '°'), mark(loAt, 'lo', Math.round(lo) + '°'));
     const hours = [0, 6, 12, 18, 24].map(i => {
       const at = new Date(times[start + i] || times[start]);
       return h('span', { text: `${at.getHours()}` });
@@ -871,14 +888,21 @@ const Weather = {
   },
   sunArc(d) {
     const up = +new Date(d.daily.sunrise[0]), down = +new Date(d.daily.sunset[0]), now = Date.now();
-    const f = Math.min(1, Math.max(0, (now - up) / (down - up)));
-    const a = Math.PI * (1 - f), cx = 60 + 52 * Math.cos(a), cy = 28 - 24 * Math.sin(a);
+    const day = now >= up && now <= down, f = Math.min(1, Math.max(0, (now - up) / (down - up)));
+    const a = Math.PI * f, cx = 120 - 104 * Math.cos(a), cy = 58 - 48 * Math.sin(a);
     const clock = ms => { const x = new Date(ms); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
-    const svg = `<svg viewBox="0 0 120 30"><path d="M8 28A52 24 0 0 1 112 28" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="2 4" stroke-linecap="round"/>${now >= up && now <= down ? `<circle cx="${cx}" cy="${cy}" r="5" fill="#FFB23D"/>` : ''}</svg>`;
-    const el = h('div', { class: 'wx-sun' }, h('span', { text: clock(up) }));
-    el.insertAdjacentHTML('beforeend', svg);
-    el.append(h('span', { text: clock(down) }));
-    return el;
+    const mins = Math.round((down - up) / 6e4);
+    let length = `${Math.floor(mins / 60)}:${pad(mins % 60)}`;
+    try { length = new Intl.DurationFormat(locale(), { style: 'narrow' }).format({ hours: Math.floor(mins / 60), minutes: mins % 60 }); } catch {}
+    const ARC = 'M16 58A104 48 0 0 1 224 58';
+    const svg = `<svg viewBox="0 0 240 66" aria-hidden="true"><defs><linearGradient id="wxsg" x1="0" x2="1" y1="0" y2="0"><stop stop-color="#FF7A45"/><stop offset=".5" stop-color="#FFD166"/><stop offset="1" stop-color="#FF7A45"/></linearGradient><linearGradient id="wxsf" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#FFC95C" stop-opacity=".3"/><stop offset="1" stop-color="#FFC95C" stop-opacity="0"/></linearGradient><clipPath id="wxsc"><rect x="0" y="0" width="${cx.toFixed(1)}" height="58"/></clipPath></defs><path d="${ARC}Z" fill="url(#wxsf)" clip-path="url(#wxsc)"/><path d="M4 58H236" class="wxs-hz"/><path d="${ARC}" class="wxs-path"/><path d="${ARC}" class="wxs-done" stroke="url(#wxsg)" pathLength="1" stroke-dasharray="${f.toFixed(3)} 1"/>${day ? `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="11" fill="#FFC95C" fill-opacity=".28"/><circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="6" fill="#FFD166"/>` : `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="5" class="wxs-moon"/>`}</svg>`;
+    const glyph = rising => `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 ${rising ? '10V3M5 6l3-3 3 3' : '3v7M5 7l3 3 3-3'}M2 13h12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    return h('div', { class: 'wx-sun' + (day ? '' : ' night') },
+      h('div', { class: 'wxs-art', html: svg }),
+      h('div', { class: 'wxs-times' },
+        h('span', { class: 'wxs-t', html: glyph(true) + `<b>${clock(up)}</b>` }),
+        h('small', { text: length }),
+        h('span', { class: 'wxs-t', html: glyph(false) + `<b>${clock(down)}</b>` })));
   },
   days(d) {
     const fmt = dateFormat(locale(), { weekday: 'short' });
@@ -1347,15 +1371,24 @@ const Bg = {
   },
   failed() { UI.toast(t('Could not load that background'), true); },
   credit(p) {
+    this.shown = p;
     const box = $('credit');
-    const b = S.bg, canStep = ['unsplash', 'files', 'urls', 'videos'].includes(b.type);
-    box.replaceChildren();
-    if (canStep) {
-      box.append(h('button', { class: 'ghost square', title: t('Next background'), onclick: e => { Motion.pop(e.currentTarget, .8); this.render(true); } }, icon('E72A')));
-      box.append(h('button', { class: 'ghost square' + (b.frequency === 'pause' ? ' pinned' : ''), title: b.frequency === 'pause' ? t('Resume') : t('Pause'), onclick: () => { b.frequency = b.frequency === 'pause' ? 'hour' : 'pause'; save(); this.credit(p); } }, icon(b.frequency === 'pause' ? 'E768' : 'E769')));
-    }
-    if (p?.u) box.append(h('button', { class: 'ghost square', title: t('Open full photo'), onclick: () => window.open(this.photoUrl(p)) }, icon('E8A7')));
-    if (p?.n) box.append(h('a', { class: 'who', href: `${p.l}?utm_source=kufu&utm_medium=referral`, text: `${t('Photo by')} ${p.n}` }));
+    const c = this.creditEls ||= (() => {
+      const next = h('button', { class: 'ghost square', title: t('Next background'), onclick: e => { if (!globalThis.Glass?.on) Motion.pop(e.currentTarget, .8); this.render(true); } }, icon('E72A'));
+      const pause = h('button', { class: 'ghost square', onclick: () => { S.bg.frequency = S.bg.frequency === 'pause' ? 'hour' : 'pause'; save(); this.credit(this.shown); } });
+      const full = h('button', { class: 'ghost square', title: t('Open full photo'), onclick: () => window.open(this.photoUrl(this.shown)) }, icon('E8A7'));
+      const who = h('a', { class: 'who' });
+      box.append(next, pause, full, who);
+      return { next, pause, full, who };
+    })();
+    const paused = S.bg.frequency === 'pause', canStep = ['unsplash', 'files', 'urls', 'videos'].includes(S.bg.type);
+    c.next.style.display = c.pause.style.display = canStep ? '' : 'none';
+    c.full.style.display = p?.u ? '' : 'none';
+    c.who.style.display = p?.n ? '' : 'none';
+    c.pause.classList.toggle('pinned', paused);
+    c.pause.title = paused ? t('Resume') : t('Pause');
+    if (c.pause.dataset.icon !== String(paused)) { c.pause.dataset.icon = paused; c.pause.replaceChildren(icon(paused ? 'E768' : 'E769')); }
+    if (p?.n) { c.who.href = `${p.l}?utm_source=kufu&utm_medium=referral`; c.who.textContent = `${t('Photo by')} ${p.n}`; }
   },
   async render(force) {
     const b = S.bg;
@@ -1436,6 +1469,18 @@ const Bg = {
 };
 
 /* ---------- the page: everything lives in zones ---------- */
+const OWN_COLOR = { clock: 'clock.color', date: 'date.textcolor', greeting: 'greeting.color', search: 'search.textcolor', links: 'links.titlecolor', weather: 'weather.textcolor', quote: 'quotes.textcolor', notes: 'notes.textcolor', pomodoro: 'pomodoro.textcolor', tasks: 'tasks.textcolor', ambient: 'ambient.textcolor', countdown: 'countdown.textcolor', progress: 'progress.textcolor' };
+function paintTextColors() {
+  const all = S.textColor, glassClock = S.style === 'glass' || S.clock.style === 'glass';
+  for (const [id, path] of Object.entries(OWN_COLOR)) {
+    const el = (WIDGETS[id] || ExtraW[id])?.el;
+    if (!el) continue;
+    let c = path.split('.').reduce((o, k) => o?.[k], S) || all;
+    if (id === 'clock' && glassClock) c = '';
+    if (c) { el.setAttribute('data-tc', ''); el.style.setProperty('--tc', c); }
+    else if (el.hasAttribute('data-tc')) { el.removeAttribute('data-tc'); el.style.removeProperty('--tc'); }
+  }
+}
 const WIDGETS = { clock: Clock, date: DateW, greeting: Greeting, weather: Weather, search: Search, links: Links, quote: Quote, notes: Notes, pomodoro: Pomo };
 const ExtraW = {};      // tasks, sounds, countdown, progress: extras.js adds them when one is turned on
 const widgetOn = id => !!(S[id === 'quote' ? 'quotes' : id]?.on && (WIDGETS[id] || ExtraW[id]));
@@ -1487,6 +1532,7 @@ const Page = {
     if (S.pomodoro.on) Pomo.build();
     for (const id in ExtraW) if (S[id]?.on) ExtraW[id].build(animate);
     this.place(animate);
+    paintTextColors();
     if (S.pomodoro.on) queueMicrotask(() => Pomo.paint());
     $('gear').hidden = S.hideGear;
     wakeBeat();
@@ -1498,7 +1544,15 @@ const Page = {
 
 /* ---------- settings and extras load on demand, so they cost new tabs nothing ---------- */
 const Lazy = {
-  css(href) { if (!document.querySelector(`link[href="${href}"]`)) document.head.append(h('link', { rel: 'stylesheet', href })); },
+  css(href) {
+    let link = document.querySelector(`link[href="${href}"]`);
+    if (!link) {
+      link = h('link', { rel: 'stylesheet', href });
+      link.ready = new Promise(done => { link.addEventListener('load', done); link.addEventListener('error', done); });
+      document.head.append(link);
+    }
+    return link.ready || Promise.resolve();
+  },
   script(src) { return new Promise((ok, no) => document.head.append(h('script', { src, onload: ok, onerror: no }))); },
   load() {
     this.css('extras.css');
@@ -1507,8 +1561,7 @@ const Lazy = {
     return this.settings ||= this.script('settings.js');
   },
   extras() {
-    this.css('extras.css');
-    return this.extrasP ||= this.script('extras.js').then(() => { this.extrasReady = true; });
+    return this.extrasP ||= Promise.all([this.css('extras.css'), this.script('extras.js')]).then(() => { this.extrasReady = true; });
   },
   async toggle() { await this.load(); Settings.toggle(); },
 };

@@ -39,7 +39,7 @@ const DEFAULTS = {
   lang: 'auto',
   accent: '',
   style: 'keys',
-  surface: { mode: 'solid', opacity: 70, blur: 16, refraction: 60 },
+  surface: { mode: 'solid', opacity: 70, blur: 16, refraction: 60, glassfrost: 0 },
   uiScale: 100,
   widgetOpacity: 100,
   palette: true,
@@ -62,21 +62,23 @@ const DEFAULTS = {
     color: '', analog: false, shape: 'round', face: 'marks', hands: 'modern', dialbg: '', dialborder: '',
     worldon: false, world: [], blink: false, seam: true, weight: 0, glassfrost: 0, glassrefraction: 60,
   },
-  date: { on: true, style: 'rail', format: 'auto', week: true, weeknum: false, firstday: 'auto' },
-  greeting: { on: true, design: 'classic', namecolor: '', weather: true, name: '', size: 34, mode: 'auto', sub: 'smart', subtext: '', icon: true, morning: '', afternoon: '', evening: '', night: '' },
-  weather: {
+  date: { textcolor: '', on: true, style: 'rail', format: 'auto', week: true, weeknum: false, firstday: 'auto', holidays: 'auto' },
+  greeting: { on: true, color: '', design: 'classic', namecolor: '', weather: true, name: '', size: 34, mode: 'auto', sub: 'smart', subtext: '', icon: true, morning: '', afternoon: '', evening: '', night: '' },
+  weather: { textcolor: '',
     on: true, size: 'compact', iconstyle: 'soft', details: true, geo: 'approximate', city: '', lat: null, lon: null, unit: 'metric', showunit: true,
     forecast: 'always', temperature: 'actual', moreinfo: 'none', provider: '', hidedesc: false, hideicon: false,
   },
-  search: { on: true, engine: 'default', request: '', newtab: false, suggestions: false, placeholder: '', width: 100, height: 46, opacity: 100, bangs: true, switcher: true },
-  quotes: { on: true, type: 'classic', author: true, frequency: 'day', user: '', url: '', favs: [] },
-  notes: { on: false, align: 'left', width: 100, opacity: 100, text: '' },
-  pomodoro: { on: false, sound: true, alarm: 'bell', volume: 60, focus: 25, short: 5, long: 15, stats: true },
-  tasks: { on: false, items: [] },
-  ambient: { on: false, sound: 'rain', volume: 40, withpomo: false },
-  countdown: { on: false, title: '', date: '' },
-  progress: { on: false, day: true, week: true, month: false, year: true },
+  search: { textcolor: '', on: true, engine: 'default', request: '', newtab: false, suggestions: false, placeholder: '', width: 100, height: 46, opacity: 100, bangs: true, switcher: true },
+  quotes: { textcolor: '', on: true, type: 'classic', author: true, frequency: 'day', user: '', url: '', favs: [] },
+  notes: { textcolor: '', on: false, align: 'left', width: 100, opacity: 100, text: '' },
+  pomodoro: { textcolor: '', on: false, sound: true, alarm: 'bell', volume: 60, focus: 25, short: 5, long: 15, stats: true },
+  tasks: { textcolor: '', on: false, items: [] },
+  ambient: { textcolor: '', on: false, sound: 'rain', volume: 40, withpomo: false },
+  countdown: { textcolor: '', on: false, title: '', date: '' },
+  progress: { textcolor: '', on: false, day: true, week: true, month: false, year: true },
+  textColor: '',
   links: {
+    titlecolor: '',
     on: true, style: 'large', newtab: false, titles: true, backgrounds: true, radius: 14, row: 7,
     groupson: false, selected: 'Default',
     groups: [{ name: 'Default', type: 'links' }],
@@ -89,7 +91,7 @@ const DEFAULTS = {
       { id: 'l6', title: 'Unsplash', url: 'https://unsplash.com', group: 'Default' },
     ],
   },
-  layout: { preset: 'centered', zones: PRESETS.centered },
+  layout: { preset: 'centered', zones: PRESETS.centered, custom: null },
   sync: { type: 'browser', gistId: '' },
 };
 
@@ -129,6 +131,7 @@ function migrate(raw) {
   // setups from when the clock and calendar were fixed keep them exactly where they were
   const zones = next.layout.zones;
   for (const id of ['date', 'clock']) if (!ZONES.some(z => zones[z]?.includes(id))) zones.center = [id, ...(zones.center || [])];
+  if (next.layout.preset === 'custom' && !next.layout.custom) next.layout.custom = structuredClone(zones);
   next.layoutV = 2;
   return next;
 }
@@ -203,7 +206,7 @@ function resolveLang() {
 }
 let LANG = resolveLang();
 let TR = LANG === 'en' ? null : (readJSON('fs.tr') || {});
-const I18N_VERSION = 13;   // raise when i18n/ changes, so saved copies refresh
+const I18N_VERSION = 21;   // raise when i18n/ changes, so saved copies refresh
 if (TR && (TR.lang !== LANG || TR.v !== I18N_VERSION)) TR = null;
 const t = s => TR?.[s] || s;
 async function loadTranslations() {
@@ -254,8 +257,15 @@ function setVar(name, value) {
   if (value == null) target.style.removeProperty(name); else target.style.setProperty(name, value);
 }
 
+// a preset, or the layout you made yourself
+const layoutZones = v => structuredClone(v === 'custom' ? S.layout.custom : PRESETS[v]);
+function rememberLayout() {
+  S.layout.preset = 'custom';
+  S.layout.custom = structuredClone(S.layout.zones);
+}
 function applyPage() {
-  const gear = $('gear'); if (gear) gear.title = t('Settings') + ' (Esc)';
+  globalThis.paintTextColors?.();
+  const gear = $('gear'), gearTitle = t('Settings') + ' (Esc)'; if (gear && gear.title !== gearTitle) gear.title = gearTitle;
   loadDesign(S.style);
   const root = document.documentElement, st = root.style;
   const dark = S.dark === 'dark' || (S.dark === 'system' && systemDark()) || (S.dark === 'auto' && isNight());
@@ -275,6 +285,8 @@ function applyPage() {
   if (S.font.shadowOn) setVar('--custom-shadow', S.font.shadowA ? `0 ${S.font.shadowY}px ${S.font.shadowBlur}px color-mix(in srgb, ${S.font.shadowColor} ${Math.round(S.font.shadowA * 100)}%, transparent)` : 'none');
   setVar('--key-radius', S.links.radius + 'px');
   setVar('--key-row', S.links.row);
+  root.toggleAttribute('data-ktcolor', !!S.links.titlecolor);
+  if (S.links.titlecolor) setVar('--kt-color', S.links.titlecolor);
   root.toggleAttribute('data-clockweight', S.clock.weight > 0);
   setVar('--clock-weight', S.clock.weight || 700);
   setVar('--clock-base', S.clock.size / 100);
@@ -282,6 +294,8 @@ function applyPage() {
   root.toggleAttribute('data-clockcolor', !!clockTint);
   if (clockTint) setVar('--clock-color', S.clock.color);
   setVar('--greeting-size', S.greeting.size + 'px');
+  root.toggleAttribute('data-gcolor', !!S.greeting.color);
+  if (S.greeting.color) setVar('--g-color', S.greeting.color);
   setVar('--search-width', S.search.width + '%');
   setVar('--search-height', S.search.height + 'px');
   setVar('--search-opacity', S.search.opacity / 100);
@@ -296,6 +310,13 @@ function applyPage() {
   root.toggleAttribute('data-clear', surf.mode !== 'solid');
   root.toggleAttribute('data-blur', surf.mode === 'glass' || (S.style === 'glass' && surf.mode !== 'transparent'));
   setVar('--sf', surf.mode === 'solid' ? 1 : surf.mode === 'transparent' ? 0 : surf.opacity / 100);
+  const frost = S.style === 'glass' && surf.mode === 'translucent' ? (surf.glassfrost || 0) / 100 : 0, thick = Math.max(0, frost * 2 - 1);
+  root.toggleAttribute('data-gfrost', frost > 0);
+  if (frost > 0) {
+    setVar('--gf-dark', (.24 * thick).toFixed(3));
+    setVar('--gf-light', (frost <= .5 ? .1 * (1 - frost * 2) : .24 * thick).toFixed(3));
+    setVar('--gf-glow', (.16 * thick).toFixed(3));
+  }
   setVar('--surf-blur', S.style === 'glass' && surf.mode !== 'glass' ? '0px' : surf.blur + 'px');
   root.toggleAttribute('data-plainaccent', S.accent === 'plain');
   root.toggleAttribute('data-blink', S.clock.blink);
@@ -358,11 +379,13 @@ function buildLiquidMotion() {
     Ease: { ...MotionPlain.Ease, spring: release.ease, bouncy: layout.ease, back: morph.ease, settle: layout.ease },
     // glass grows under a press rather than squashing, by the same amount on any size
     press(el) {
+      if (globalThis.Glass?.on && !el.matches('.key')) return;
       const grow = Math.min(.16, 8 / Math.max(el.offsetWidth || 1, el.offsetHeight || 1));
       el.style.setProperty('--lg-glow', 1);
       return to(el, 'scale', String(1 + grow), press.ms, press.ease);
     },
     springBack(el) {
+      if (globalThis.Glass?.on && !el.matches('.key')) return;
       el.style.removeProperty('--lg-glow');
       return to(el, 'scale', '1', release.ms, release.ease);
     },
@@ -502,6 +525,16 @@ const UI = {
     return best;
   },
 
+  // place many segmented controls in three passes: classes, one layout read, then the writes
+  placeAll(boxes) {
+    const list = boxes.filter(b => b.phases), picked = list.map(b => b.phases.prepare()), sizes = list.map((b, i) => b.phases.measure(picked[i]));
+    list.forEach((b, i) => b.phases.apply(sizes[i], false));
+  },
+  segQueue: new Set(),
+  placeLater(box) {
+    if (!this.segQueue.size) queueMicrotask(() => { const boxes = [...this.segQueue]; this.segQueue.clear(); this.placeAll(boxes); });
+    this.segQueue.add(box);
+  },
   // sliding-pill choice, Friis's .seg
   seg(options, value, onChange, cls = '') {
     const pill = h('div', { class: 'seg-pill' });
@@ -511,20 +544,22 @@ const UI = {
       onclick: () => { if (o.value !== value) { value = o.value; place(true); onChange(o.value); } },
     }));
     box.append(...buttons);
-    function place(animate) {
-      const b = buttons.find(x => x.dataset.v === String(value)) || buttons[0];
-      for (const x of buttons) x.classList.toggle('on', x === b);
-      if (!b || !b.offsetWidth) return;
+    const prepare = () => { const b = buttons.find(x => x.dataset.v === String(value)) || buttons[0]; for (const x of buttons) x.classList.toggle('on', x === b); return b; };
+    const measure = b => (b && b.offsetWidth ? { left: b.offsetLeft, width: b.offsetWidth } : null);
+    const apply = (m, animate) => {
+      if (!m) return;
       if (animate && !Motion.reduced) {
-        Motion.slideX(pill, b.offsetLeft - 2);
-        Motion.size(pill, 'width', b.offsetWidth);
+        Motion.slideX(pill, m.left - 2);
+        Motion.size(pill, 'width', m.width);
       } else {
-        pill.style.translate = `${b.offsetLeft - 2}px 0px`;
-        pill.style.width = b.offsetWidth + 'px';
+        pill.style.translate = `${m.left - 2}px 0px`;
+        pill.style.width = m.width + 'px';
       }
-    }
+    };
+    function place(animate) { apply(measure(prepare()), animate); }
     box.place = place;
-    queueMicrotask(() => place(false));
+    box.phases = { prepare, measure, apply };
+    UI.placeLater(box);
     return box;
   },
 

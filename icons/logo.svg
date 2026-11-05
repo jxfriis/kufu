@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Kufu 工夫 co.</title>
+  <defs>
+    <linearGradient id="k" gradientUnits="userSpaceOnUse" x1="40" x2="200" y1="0" y2="0"><stop stop-color="#F26A3D"/><stop offset="1" stop-color="#F5AE3C"/></linearGradient>
+  </defs>
+  <path d="M60 12H320C420 12 500 92 500 192V320C500 420 420 500 320 500H60C34 500 12 478 12 452V60C12 34 34 12 60 12Z" fill="#050506"/>
+  <g fill="none" stroke="url(#k)" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M72 64V180"/><path d="M180 64L98 122L186 180"/>
+  </g>
+  <circle cx="326" cy="122" r="84" fill="#22885A"/>
+  <path d="M292 88V126C292 172 360 172 360 126V88" fill="none" stroke="#050506" stroke-width="30" stroke-linecap="round"/>
+  <g fill="none" stroke="#3B82C4" stroke-width="52" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M72 246V362"/><path d="M72 246H178"/><path d="M72 304H158"/>
+  </g>
+  <circle cx="326" cy="304" r="84" fill="#EC6A97"/>
+  <path d="M292 270V308C292 354 360 354 360 308V270" fill="none" stroke="#050506" stroke-width="30" stroke-linecap="round"/>
+  <g fill="none" stroke="#F5EEDF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M54 414H112"/><path d="M83 414V472"/><path d="M46 472H120"/>
+    <path d="M150 424H208"/><path d="M142 444H216"/><path d="M179 404C179 434 175 458 142 480"/><path d="M181 446C189 460 200 472 218 480"/>
+  </g>
+  <rect x="240" y="412" width="156" height="62" rx="31" fill="none" stroke="#FF5436" stroke-width="10"/>
+  <g fill="none" stroke="#FF5436" stroke-width="11" stroke-linecap="round">
+    <path d="M290 433A15 15 0 1 0 290 453"/>
+    <circle cx="323" cy="443" r="15"/>
+  </g>
+  <circle cx="358" cy="457" r="6.5" fill="#FF5436"/>
+</svg>

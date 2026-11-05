@@ -147,11 +147,75 @@ const Progress = {
 Object.assign(ExtraW, { tasks: Tasks, ambient: Ambient, countdown: Countdown, progress: Progress });
 
 /* ---------- month calendar, from the week rail ---------- */
+// [month, day, name] | ['e', days from Easter, name] | ['n', month, weekday, nth (-1 = last), name] | ['l', lunar month, lunar day, name] | ['f', year => [month, day], name]
+const HOLIDAYS = {
+  DK: [[1, 1, 'Nytårsdag'], [2, 14, 'Valentinsdag'], ['e', -49, 'Fastelavn'], ['e', -7, 'Palmesøndag'], ['e', -3, 'Skærtorsdag'], ['e', -2, 'Langfredag'], ['e', 0, 'Påskedag'], ['e', 1, '2. påskedag'], ['n', 5, 0, 2, 'Mors dag'], ['e', 39, 'Kristi himmelfartsdag'], ['e', 49, 'Pinsedag'], ['e', 50, '2. pinsedag'], [6, 5, 'Grundlovsdag og fars dag'], [6, 23, 'Sankthansaften'], [10, 31, 'Halloween'], [11, 10, 'Mortensaften'], [12, 24, 'Juleaften'], [12, 25, '1. juledag'], [12, 26, '2. juledag'], [12, 31, 'Nytårsaften']],
+  DE: [[1, 1, 'Neujahr'], [2, 14, 'Valentinstag'], ['e', -2, 'Karfreitag'], ['e', 0, 'Ostersonntag'], ['e', 1, 'Ostermontag'], [5, 1, 'Tag der Arbeit'], ['n', 5, 0, 2, 'Muttertag'], ['e', 39, 'Christi Himmelfahrt'], ['e', 49, 'Pfingstsonntag'], ['e', 50, 'Pfingstmontag'], [10, 3, 'Tag der Deutschen Einheit'], [10, 31, 'Halloween'], [12, 24, 'Heiligabend'], [12, 25, '1. Weihnachtstag'], [12, 26, '2. Weihnachtstag'], [12, 31, 'Silvester']],
+  ES: [[1, 1, 'Año Nuevo'], [1, 6, 'Reyes'], [2, 14, 'San Valentín'], ['e', -2, 'Viernes Santo'], ['e', 0, 'Domingo de Resurrección'], [5, 1, 'Día del Trabajador'], ['n', 5, 0, 1, 'Día de la Madre'], [8, 15, 'Asunción'], [10, 12, 'Fiesta Nacional'], [11, 1, 'Todos los Santos'], [12, 6, 'Día de la Constitución'], [12, 8, 'Inmaculada Concepción'], [12, 24, 'Nochebuena'], [12, 25, 'Navidad'], [12, 31, 'Nochevieja']],
+  MX: [[1, 1, 'Año Nuevo'], ['n', 2, 1, 1, 'Día de la Constitución'], [2, 14, 'San Valentín'], ['n', 3, 1, 3, 'Natalicio de Benito Juárez'], ['e', -2, 'Viernes Santo'], ['e', 0, 'Domingo de Pascua'], [5, 1, 'Día del Trabajo'], [5, 10, 'Día de las Madres'], [9, 16, 'Día de la Independencia'], [11, 2, 'Día de Muertos'], ['n', 11, 1, 3, 'Día de la Revolución'], [12, 24, 'Nochebuena'], [12, 25, 'Navidad'], [12, 31, 'Fin de Año']],
+  FR: [[1, 1, 'Jour de l’An'], [2, 14, 'Saint-Valentin'], ['e', 0, 'Pâques'], ['e', 1, 'Lundi de Pâques'], [5, 1, 'Fête du Travail'], [5, 8, 'Victoire 1945'], ['e', 39, 'Ascension'], ['e', 49, 'Pentecôte'], ['e', 50, 'Lundi de Pentecôte'], [7, 14, 'Fête nationale'], [8, 15, 'Assomption'], [10, 31, 'Halloween'], [11, 1, 'Toussaint'], [11, 11, 'Armistice 1918'], [12, 24, 'Réveillon de Noël'], [12, 25, 'Noël'], [12, 31, 'Saint-Sylvestre']],
+  BR: [[1, 1, 'Ano Novo'], ['e', -47, 'Carnaval'], ['e', -2, 'Sexta-feira Santa'], ['e', 0, 'Páscoa'], [4, 21, 'Tiradentes'], [5, 1, 'Dia do Trabalho'], ['n', 5, 0, 2, 'Dia das Mães'], [6, 12, 'Dia dos Namorados'], ['e', 60, 'Corpus Christi'], ['n', 8, 0, 2, 'Dia dos Pais'], [9, 7, 'Independência'], [10, 12, 'Nossa Senhora Aparecida'], [11, 2, 'Finados'], [11, 15, 'Proclamação da República'], [11, 20, 'Consciência Negra'], [12, 24, 'Véspera de Natal'], [12, 25, 'Natal'], [12, 31, 'Réveillon']],
+  JP: [[1, 1, '元日'], ['n', 1, 1, 2, '成人の日'], [2, 11, '建国記念の日'], [2, 14, 'バレンタインデー'], [2, 23, '天皇誕生日'], ['f', y => [3, Math.floor(20.8431 + .242194 * (y - 1980)) - Math.floor((y - 1980) / 4)], '春分の日'], [4, 29, '昭和の日'], [5, 3, '憲法記念日'], [5, 4, 'みどりの日'], [5, 5, 'こどもの日'], ['n', 7, 1, 3, '海の日'], [8, 11, '山の日'], ['n', 9, 1, 3, '敬老の日'], ['f', y => [9, Math.floor(23.2488 + .242194 * (y - 1980)) - Math.floor((y - 1980) / 4)], '秋分の日'], ['n', 10, 1, 2, 'スポーツの日'], [11, 3, '文化の日'], [11, 23, '勤労感謝の日'], [12, 25, 'クリスマス'], [12, 31, '大晦日']],
+  KR: [[1, 1, '신정'], ['l', '1', 1, '설날'], [3, 1, '삼일절'], [5, 5, '어린이날'], ['l', '4', 8, '부처님오신날'], [6, 6, '현충일'], [8, 15, '광복절'], ['l', '8', 15, '추석'], [10, 3, '개천절'], [10, 9, '한글날'], [12, 25, '크리스마스']],
+  CN: [[1, 1, '元旦'], ['l', '1', 1, '春节'], ['l', '1', 15, '元宵节'], ['f', y => [4, Math.floor((y % 100) * .2422 + 4.81) - Math.floor((y % 100 - 1) / 4)], '清明节'], [5, 1, '劳动节'], ['l', '5', 5, '端午节'], ['l', '7', 7, '七夕节'], ['l', '8', 15, '中秋节'], [10, 1, '国庆节']],
+  US: [[1, 1, 'New Year’s Day'], ['n', 1, 1, 3, 'Martin Luther King Jr. Day'], [2, 14, 'Valentine’s Day'], ['n', 2, 1, 3, 'Presidents’ Day'], [3, 17, 'St. Patrick’s Day'], ['e', 0, 'Easter'], ['n', 5, 0, 2, 'Mother’s Day'], ['n', 5, 1, -1, 'Memorial Day'], ['n', 6, 0, 3, 'Father’s Day'], [6, 19, 'Juneteenth'], [7, 4, 'Independence Day'], ['n', 9, 1, 1, 'Labor Day'], [10, 31, 'Halloween'], [11, 11, 'Veterans Day'], ['n', 11, 4, 4, 'Thanksgiving'], [12, 24, 'Christmas Eve'], [12, 25, 'Christmas Day'], [12, 31, 'New Year’s Eve']],
+  GB: [[1, 1, 'New Year’s Day'], [2, 14, 'Valentine’s Day'], ['e', -21, 'Mother’s Day'], ['e', -2, 'Good Friday'], ['e', 0, 'Easter Sunday'], ['e', 1, 'Easter Monday'], ['n', 5, 1, 1, 'Early May bank holiday'], ['n', 5, 1, -1, 'Spring bank holiday'], ['n', 6, 0, 3, 'Father’s Day'], ['n', 8, 1, -1, 'Summer bank holiday'], [10, 31, 'Halloween'], [11, 5, 'Bonfire Night'], [12, 24, 'Christmas Eve'], [12, 25, 'Christmas Day'], [12, 26, 'Boxing Day'], [12, 31, 'New Year’s Eve']],
+};
+const Holidays = {
+  years: new Map(),
+  country() {
+    const pick = S.date.holidays || 'auto';
+    if (pick === 'off') return null;
+    if (HOLIDAYS[pick]) return pick;
+    let region = '';
+    try { region = new Intl.Locale(navigator.language).region || ''; } catch {}
+    const near = { AT: 'DE', CH: 'DE', IE: 'GB', AU: 'GB', NZ: 'GB', CA: 'US', PT: 'BR', AR: 'MX', CL: 'MX', CO: 'MX', PE: 'MX', VE: 'MX', BE: 'FR' };
+    return HOLIDAYS[region] ? region : near[region] || { da: 'DK', de: 'DE', es: 'ES', fr: 'FR', ja: 'JP', ko: 'KR', 'pt-BR': 'BR', 'zh-CN': 'CN', en: 'US' }[LANG] || null;
+  },
+  easter(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    return new Date(y, Math.floor((h + l - 7 * m + 114) / 31) - 1, (h + l - 7 * m + 114) % 31 + 1);
+  },
+  nth(y, month, weekday, n) {
+    if (n > 0) { const first = new Date(y, month - 1, 1).getDay(); return new Date(y, month - 1, 1 + (weekday - first + 7) % 7 + (n - 1) * 7); }
+    const last = new Date(y, month, 0);
+    return new Date(y, month - 1, last.getDate() - (last.getDay() - weekday + 7) % 7);
+  },
+  lunar(y, country) {
+    const fmt = new Intl.DateTimeFormat('en-u-ca-' + (country === 'KR' ? 'dangi' : 'chinese'), { month: 'numeric', day: 'numeric' }), out = new Map();
+    for (let d = new Date(y, 0, 1); d.getFullYear() === y; d.setDate(d.getDate() + 1)) {
+      const p = fmt.formatToParts(d);
+      const month = p.find(x => x.type === 'month').value, at = new Date(d);
+      if (country === 'CN' && month === '1') at.setDate(at.getDate() + ({ 2027: -1, 2030: 1 }[y] || 0));
+      out.set(month + '/' + p.find(x => x.type === 'day').value, at);
+    }
+    return out;
+  },
+  year(y) {
+    const country = this.country();
+    if (!country) return new Map();
+    const id = country + y;
+    if (this.years.has(id)) return this.years.get(id);
+    const out = new Map(), easter = HOLIDAYS[country].some(r => r[0] === 'e') ? this.easter(y) : null;
+    const lunar = HOLIDAYS[country].some(r => r[0] === 'l') ? this.lunar(y, country) : null;
+    const add = (d, name) => { if (!d) return; const k = d.toDateString(); out.set(k, out.has(k) ? out.get(k) + ' · ' + name : name); };
+    for (const r of HOLIDAYS[country]) {
+      if (r[0] === 'e') { const d = new Date(easter); d.setDate(d.getDate() + r[1]); add(d, r[2]); }
+      else if (r[0] === 'n') add(this.nth(y, r[1], r[2], r[3]), r[4]);
+      else if (r[0] === 'l') add(lunar.get(r[1] + '/' + r[2]), r[3]);
+      else if (r[0] === 'f') { const [m, day] = r[1](y); add(new Date(y, m - 1, day), r[2]); }
+      else add(new Date(y, r[0] - 1, r[1]), r[2]);
+    }
+    this.years.set(id, out);
+    return out;
+  },
+  on(d) { return this.year(d.getFullYear()).get(d.toDateString()) || ''; },
+};
 const Calendar = {
   el: null,
   toggle(anchor) {
     if (this.el) return this.close();
-    if (!anchor?.isConnected) anchor = document.querySelector('[data-w="date"] .week') || document.querySelector('[data-w="date"] > *');
+    if (!anchor?.isConnected || !anchor.offsetWidth) anchor = document.querySelector('[data-w="date"] .week') || document.querySelector('[data-w="date"] > *');
     if (!anchor) return;
     this.when = new Date();
     this.when.setDate(1);
@@ -159,17 +223,11 @@ const Calendar = {
     document.body.append(this.el);
     this.draw(true);
     const r = anchor.getBoundingClientRect(), b = this.el.getBoundingClientRect();
-    const clock = document.querySelector('#page .clock, #page .dial')?.getBoundingClientRect() || r;
-    const date = document.querySelector('#page .date, #page .cal-page, #page .mini-month')?.getBoundingClientRect() || r;
-    const spot = UI.freeSpot(b.width, b.height, [
-      { left: Math.max(clock.right, date.right) + 14, top: clock.top, origin: '0% 30%' },
-      { left: Math.min(clock.left, date.left) - b.width - 14, top: clock.top, origin: '100% 30%' },
-      { left: r.left + r.width / 2 - b.width / 2, top: r.bottom + 8, origin: '50% 0%' },
-      { left: r.left + r.width / 2 - b.width / 2, top: r.top - b.height - 8, origin: '50% 100%' },
-    ]);
-    this.el.style.left = spot.left + 'px';
-    this.el.style.top = spot.top + 'px';
-    this.el.style.transformOrigin = spot.origin;
+    // always underneath what you clicked. On a short screen the list scrolls rather than the card jumping above.
+    this.el.style.left = Math.max(8, Math.min(innerWidth - b.width - 8, r.left + r.width / 2 - b.width / 2)) + 'px';
+    this.under = r.bottom + 8;
+    this.over = r.top;
+    this.fit();
     Motion.popIn(this.el);
     this.away = e => { if (!this.el?.contains(e.target) && !anchor.contains(e.target)) this.close(); };
     addEventListener('pointerdown', this.away, true);
@@ -180,6 +238,13 @@ const Calendar = {
     this.el = null;
     if (el) Motion.fadeOut(el);
   },
+  // underneath what you clicked, whole and without scrolling. A calendar low on the page opens above itself if there is room there, or the card just moves up to fit.
+  fit() {
+    const height = this.el.offsetHeight, fitsBelow = this.under + height <= innerHeight - 8, fitsAbove = this.over - 8 - height >= 8;
+    const above = !fitsBelow && fitsAbove && innerHeight - this.under < 300;
+    this.el.style.top = (above ? this.over - 8 - height : Math.max(8, Math.min(this.under, innerHeight - height - 8))) + 'px';
+    this.el.style.transformOrigin = above ? '50% 100%' : '50% 0%';
+  },
   step(n) { this.when.setMonth(this.when.getMonth() + n); this.draw(false, n); },
   draw(first, dir = 0) {
     const w = this.when, loc = locale(), start = firstDayOfWeek(), today = new Date();
@@ -188,19 +253,25 @@ const Calendar = {
     const lead = (new Date(w.getFullYear(), w.getMonth(), 1).getDay() - start + 7) % 7;
     const total = new Date(w.getFullYear(), w.getMonth() + 1, 0).getDate();
     const showWeeks = S.date.weeknum;
-    const cells = [];
+    const cells = [], special = [];
     for (let i = 0; i < (Math.ceil((lead + total) / 7)) * 7; i++) {
       const d = new Date(w.getFullYear(), w.getMonth(), 1 - lead + i);
       if (showWeeks && i % 7 === 0) cells.push(h('div', { class: 'cal-wk', text: isoWeek(d) }));
       const isToday = d.toDateString() === today.toDateString();
-      cells.push(h('div', { class: 'cal-d' + (isToday ? ' today' : '') + (d.getMonth() !== w.getMonth() ? ' out' : ''), text: d.getDate() }));
+      const holiday = Holidays.on(d);
+      if (holiday && d.getMonth() === w.getMonth()) special.push([d.getDate(), holiday]);
+      cells.push(h('div', { class: 'cal-d' + (isToday ? ' today' : '') + (d.getMonth() !== w.getMonth() ? ' out' : '') + (holiday ? ' hol' : ''), text: d.getDate(), title: holiday || null }));
     }
     const grid = h('div', { class: 'cal-grid' + (showWeeks ? ' weeks' : '') }, showWeeks ? h('div', { class: 'cal-wk' }) : null, names.map(n => h('div', { class: 'cal-h', text: n })), cells);
     this.el.replaceChildren(h('div', { class: 'cal-head' },
       h('button', { class: 'ghost square', title: t('Previous'), onclick: () => this.step(-1) }, icon('E76B')),
       h('b', { text: new Intl.DateTimeFormat(loc, { month: 'long', year: 'numeric' }).format(w) }),
-      h('button', { class: 'ghost square', title: t('Next'), onclick: () => this.step(1) }, icon('E76C'))), grid);
-    if (!first) Motion.enter(grid, dir * 14, 0);
+      h('button', { class: 'ghost square', title: t('Next'), onclick: () => this.step(1) }, icon('E76C'))),
+      h('div', { class: 'cal-body' + (Holidays.country() ? ' with-days' : '') }, grid, Holidays.country() ? h('div', { class: 'cal-hol' }, special.map(([day, name]) => h('div', {}, h('b', { text: day }), h('span', { text: name })))) : null));
+    if (!first) {
+      Motion.enter(grid, dir * 14, 0);
+      this.fit();
+    }
   },
 };
 
@@ -325,6 +396,7 @@ const Palette = {
 
 /* ---------- arrange: drag widgets between zones, right on the page ---------- */
 const PRESET_NAMES = { centered: 'Centered', dashboard: 'Dashboard', dock: 'Dock', minimal: 'Minimal' };
+const ARRANGE_NAMES = { clock: 'Clock', date: 'Calendar', greeting: 'Greeting', weather: 'Weather', search: 'Search bar', links: 'Quick Links', quote: 'Quotes', notes: 'Notes', pomodoro: 'Pomodoro', tasks: 'Tasks', ambient: 'Sounds', countdown: 'Countdown', progress: 'Progress' };
 const Arrange = {
   on: false,
   toggle() { this.on ? this.stop() : this.start(); },
@@ -333,19 +405,96 @@ const Arrange = {
     if (globalThis.Settings?.el) Settings.close();
     Weather.closeCard();
     document.body.setAttribute('data-arrange', '');
-    const names = { clock: 'Clock', date: 'Calendar', greeting: 'Greeting', weather: 'Weather', search: 'Search bar', links: 'Quick Links', quote: 'Quotes', notes: 'Notes', pomodoro: 'Pomodoro', tasks: 'Tasks', ambient: 'Sounds', countdown: 'Countdown', progress: 'Progress' };
-    for (const [id, name] of Object.entries(names)) (WIDGETS[id] || ExtraW[id])?.el.setAttribute('data-label', t(name));
+    this.label();
     this.bar = h('div', { class: 'arrange-bar panel' },
       h('b', { text: t('Drag anything to move it') }),
-      UI.seg(Object.entries(PRESET_NAMES).map(([value, label]) => ({ value, label: t(label) })), S.layout.preset, v => this.preset(v)),
+      this.seg(),
       h('button', { class: 'accent-btn small', text: t('Done'), onclick: () => this.stop() }));
     document.body.append(this.bar);
     Motion.enter(this.bar, 0, -18);
     this.down = e => this.drag(e);
     $('page').addEventListener('pointerdown', this.down, true);
+    this.decorate();
+    // widgets rebuild themselves now and then, so their remove buttons are put back the moment that happens
+    this.watch = new MutationObserver(() => this.decorate());
+    this.watch.observe($('page'), { childList: true, subtree: true });
+  },
+  label() {
+    for (const [id, name] of Object.entries(ARRANGE_NAMES)) (WIDGETS[id] || ExtraW[id])?.el.setAttribute('data-label', t(name));
+  },
+  // what is switched off right now, and so can be added to an empty spot
+  unused: () => Object.keys(ARRANGE_NAMES).filter(id => !S[id === 'quote' ? 'quotes' : id]?.on),
+  decorate() {
+    const unused = this.unused().length;
+    for (const w of document.querySelectorAll('#page .zone > .w')) {
+      if (w.querySelector(':scope > .arr-x')) continue;
+      const x = h('button', { class: 'arr-x no-press', title: t('Remove'), 'aria-label': t('Remove'), onclick: () => this.remove(w.dataset.w) }, h('i'));
+      w.append(x);
+      if (!Motion.reduced) Motion.pop(x, .4);
+    }
+    for (const z of document.querySelectorAll('#page .zone')) {
+      const empty = !z.querySelector(':scope > .w'), plus = z.querySelector(':scope > .arr-add');
+      if (!empty || !unused) { plus?.remove(); continue; }
+      if (plus) continue;
+      const add = h('button', { class: 'arr-add no-press', title: t('Add here'), 'aria-label': t('Add here'), onclick: () => this.pick(add, z.dataset.z) }, h('i'));
+      z.append(add);
+      if (!Motion.reduced) Motion.popIn(add);
+    }
+  },
+  pick(btn, zone) {
+    const r = btn.getBoundingClientRect();
+    Motion.pop(btn, .8);
+    UI.menu(r.left, r.bottom + 6, this.unused().map(id => ({ label: t(ARRANGE_NAMES[id]), run: () => this.add(id, zone) })));
+  },
+  async add(id, zone) {
+    const key = id === 'quote' ? 'quotes' : id;
+    this.flip(() => {
+      S[key].on = true;
+      const z = S.layout.zones;
+      for (const k of ZONES) z[k] = (z[k] || []).filter(x => x !== id);
+      (z[zone] ||= []).push(id);
+      this.custom();
+      save();
+      Page.renderAll(false);
+      this.label();
+      this.decorate();
+    });
+    if (id === 'weather') Weather.refresh();
+    const el = (WIDGETS[id] || ExtraW[id])?.el;
+    if (el && !Motion.reduced) Motion.popIn(el);
+  },
+  remove(id) {
+    const el = (WIDGETS[id] || ExtraW[id])?.el;
+    if (el && !Motion.reduced) {
+      // a copy shrinks away where the widget was, while the others spring into the gap
+      const r = el.getBoundingClientRect(), copy = el.cloneNode(true);
+      copy.querySelector(':scope > .arr-x')?.remove();
+      copy.classList.add('arrange-ghost');
+      copy.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px`;
+      document.body.append(copy);
+      copy.animate([{ scale: 1, opacity: 1 }, { scale: .86, opacity: 0 }], { duration: 220, easing: Motion.Ease.quick, fill: 'forwards' }).onfinish = () => copy.remove();
+    }
+    this.flip(() => {
+      S[id === 'quote' ? 'quotes' : id].on = false;
+      this.custom();
+      save();
+      Page.renderAll(false);
+      this.label();
+      this.decorate();
+    });
+  },
+  seg() {
+    const names = { ...PRESET_NAMES, ...(S.layout.custom ? { custom: 'My layout' } : {}) };
+    return UI.seg(Object.entries(names).map(([value, label]) => ({ value, label: t(label) })), S.layout.preset, v => this.preset(v));
+  },
+  custom() {
+    rememberLayout();
+    this.bar?.querySelector('.seg')?.replaceWith(this.seg());
   },
   stop() {
     this.on = false;
+    this.watch.disconnect();
+    document.querySelectorAll('.arr-x, .arr-add').forEach(x => x.remove());
     document.body.removeAttribute('data-arrange');
     $('page').removeEventListener('pointerdown', this.down, true);
     const bar = this.bar;
@@ -364,11 +513,11 @@ const Arrange = {
     }
   },
   preset(v) {
-    this.flip(() => { S.layout.preset = v; S.layout.zones = structuredClone(PRESETS[v]); save(); Page.place(false); });
+    this.flip(() => { S.layout.preset = v; S.layout.zones = layoutZones(v); save(); Page.place(false); this.decorate(); });
   },
   drag(e) {
     const w = e.target.closest('.zone > .w');
-    if (e.button !== 0 || !w) return;
+    if (e.button !== 0 || !w || e.target.closest('.arr-x')) return;
     e.preventDefault();
     e.stopPropagation();
     const id = w.dataset.w, r = w.getBoundingClientRect(), sx = e.clientX, sy = e.clientY;
@@ -388,6 +537,7 @@ const Arrange = {
         scrolling = requestAnimationFrame(autoScroll);
         ghost = w.cloneNode(true);
         ghost.classList.add('arrange-ghost');
+        ghost.querySelector(':scope > .arr-x')?.remove();
         ghost.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px`;
         document.body.append(ghost);
         w.style.opacity = '.25';
@@ -396,7 +546,7 @@ const Arrange = {
       ghost.style.transform = `translate(${ev.clientX - sx}px, ${ev.clientY - sy}px)`;
       mark(document.elementsFromPoint(ev.clientX, ev.clientY).map(x => x.closest?.('.zone')).find(Boolean) || null);
       if (zone) {
-        const kids = [...zone.children].filter(k => k !== w);
+        const kids = [...zone.children].filter(k => k !== w && k.classList.contains('w'));
         at = kids.findIndex(k => { const b = k.getBoundingClientRect(); return ev.clientY < b.top + b.height / 2; });
         if (at < 0) at = kids.length;
       }
@@ -419,11 +569,11 @@ const Arrange = {
         const visible = z[to].filter(widgetOn);
         const before = visible[at];
         z[to].splice(before ? z[to].indexOf(before) : z[to].length, 0, id);
-        S.layout.preset = 'custom';
+        this.custom();
         save();
         Page.place(false);
+        this.decorate();
       });
-      this.bar?.querySelector('.seg')?.replaceWith(UI.seg(Object.entries(PRESET_NAMES).map(([value, label]) => ({ value, label: t(label) })), 'custom', v => this.preset(v)));
     };
     addEventListener('pointermove', move);
     addEventListener('pointerup', up);

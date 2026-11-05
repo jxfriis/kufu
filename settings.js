@@ -23,24 +23,32 @@ const Settings = {
     this.stagger();
   },
   openAt(id) { this.page = id; this.q = ''; if (this.el) this.go(id); else this.open(); },
-  // The page stays exactly where it is: settings float over it, and widgets become shortcuts to their own settings.
+  // The page stays exactly where it is and settings float over it. Point away and the panel thins so you can see
+  // what is under it; click away and it closes, without that click doing anything to the page.
   preview(on) {
     const root = document.documentElement;
     this.spot();
     if (on) {
+      clearTimeout(this.leaving);
       root.setAttribute('data-preview', '');
-      this.pick = e => {
-        const w = e.target.closest('#page .w');
-        if (!w) return;
+      const away = t => !t.closest?.('.settings, .menu, .modal, .toast, .palette, #gear, .arrange-bar');
+      const busy = () => !!document.querySelector('.menu, .modal');
+      this.down = e => { this.outside = e.button === 0 && away(e.target) && !busy(); };
+      this.click = e => {
+        if (!this.outside || !away(e.target)) return;
+        this.outside = false;
         e.preventDefault();
         e.stopPropagation();
-        const id = PAGE_OF_WIDGET[w.dataset.w];
-        if (id) this.go(id);
+        this.close();
       };
-      addEventListener('click', this.pick, true);
+      addEventListener('pointerdown', this.down, true);
+      addEventListener('click', this.click, true);
+      this.el.addEventListener('pointerleave', e => { if (!e.buttons && !busy()) this.el.classList.add('peek'); });
+      this.el.addEventListener('pointerenter', () => this.el.classList.remove('peek'));
     } else {
-      root.removeAttribute('data-preview');
-      removeEventListener('click', this.pick, true);
+      this.leaving = setTimeout(() => root.removeAttribute('data-preview'), 200);
+      removeEventListener('pointerdown', this.down, true);
+      removeEventListener('click', this.click, true);
     }
   },
   // light up what a menu item controls
@@ -56,7 +64,7 @@ const Settings = {
     this.preview(false);
     const el = this.el;
     this.el = null;
-    if (el) Motion.fadeOut(el);
+    if (el) { el.style.transition = 'none'; el.classList.remove('peek'); Motion.fadeOut(el); }
   },
   rebuild() {
     if (!this.el) return;
@@ -86,45 +94,127 @@ const Settings = {
       this.navToggles.set(key, { sw, btn });
       return h('div', { class: 'nav-row' }, btn, sw);
     };
-    const navKids = NAV.flatMap(([group, ids]) => [group ? h('div', { class: 'nav-group', text: t(group) }) : null, ...ids.map(navRow)]);
+    // groups fold, so only the part you are working in is open
+    this.navGroups = new Map();
+    const navKids = NAV.flatMap(([group, ids]) => {
+      if (!group) return ids.map(navRow);
+      const items = h('div', { class: 'nav-items' }, ids.map(navRow)), count = h('small', { class: 'nav-count' });
+      const head = h('button', { class: 'nav-group no-press', onclick: () => this.openGroup(group, true) }, h('span', { text: t(group) }), count, icon('E70D'));
+      const box = h('div', { class: 'nav-sec' }, head, items);
+      items.hidden = true;
+      this.navGroups.set(group, { box, items, head, count, ids });
+      return [box];
+    });
     const filter = h('input', { type: 'text', value: this.q, placeholder: t('Search') + '…', 'aria-label': t('Search'), oninput: () => { this.q = filter.value.trim().toLowerCase(); this.renderPage(); this.placePill(true); } });
     this.title = h('h2');
+    this.headSw = h('div', { class: 'head-switch' });
+    this.jump = h('div', { class: 'set-jump' });
     this.blurb = h('p');
     this.body = h('div', { class: 'set-body' });
+    this.body.addEventListener('scroll', () => { if (!this.spying) { this.spying = true; requestAnimationFrame(() => { this.spying = false; this.spy(); }); } }, { passive: true });
     this.el.replaceChildren(
       h('nav', { class: 'set-nav' },
         h('div', { class: 'set-brand' }, h('img', { src: 'icons/icon-48.png', alt: '', width: 26, height: 26 }), h('b', { text: 'Kufu' })),
         h('div', { class: 'text-in inset set-filter' }, icon('E721'), filter),
-        h('div', { class: 'nav-list' }, this.pill, navKids)),
+        h('div', { class: 'nav-list' }, this.pill, navKids),
+        h('button', { class: 'raised-btn set-arrange', title: t('Arrange page'), onclick: () => Lazy.extras().then(() => Arrange.toggle()) }, icon('E80A'), h('span', { text: t('Arrange page') }))),
       h('div', { class: 'set-main' },
-        h('header', { class: 'set-head' }, h('div', { class: 'grow' }, this.title, this.blurb),
+        h('header', { class: 'set-head' }, h('div', { class: 'grow' }, this.title, this.blurb), this.headSw,
           h('button', { class: 'ghost square', title: t('Close') + ' (Esc)', onclick: () => this.close() }, icon('E711'))),
+        this.jump,
         this.body));
+    const g = groupOf(this.page);
+    if (g) this.openGroup(g, false);
     this.renderPage();
   },
+  openGroup(name, animate) {
+    const was = this.navGroups.get(name)?.box.classList.contains('open');
+    for (const [key, g] of this.navGroups) {
+      const open = key === name && !was;
+      g.box.classList.toggle('open', open);
+      g.items.hidden = !open;
+      if (open && animate && !Motion.reduced) [...g.items.children].forEach((c, i) => Motion.enter(c, 0, -6, i * 18));
+    }
+    this.placePill(false);
+  },
   go(id) {
+    const flat = NAV.flatMap(x => x[1]), dir = flat.indexOf(id) < flat.indexOf(this.page) ? -1 : 1;
     this.page = id;
+    const g = groupOf(id);
+    if (g && !this.navGroups.get(g).box.classList.contains('open')) this.openGroup(g, true);
     if (this.q) { this.q = ''; this.el.querySelector('.set-filter input').value = ''; }
     this.renderPage();
     this.body.scrollTop = 0;
     this.placePill(true);
-    this.stagger();
+    this.stagger(dir);
   },
   placePill(animate) {
     const b = this.navBtns.get(this.page);
     for (const [id, x] of this.navBtns) x.classList.toggle('on', id === this.page && !this.q);
-    this.pill.style.opacity = this.q ? '0' : '1';
-    if (!b?.offsetHeight) return;
-    if (animate && !Motion.reduced) Motion.to(this.pill, 'translate', '0px ' + b.offsetTop + 'px', 650, Motion.Ease.spring);
-    else this.pill.style.translate = '0px ' + b.offsetTop + 'px';
+    const showing = !!b?.offsetHeight;
+    this.pill.style.opacity = this.q || !showing ? '0' : '1';
+    for (const [, g] of this.navGroups) g.head.classList.toggle('here', g.ids.includes(this.page) && !this.q);
+    if (!showing) return;
+    const top = (b.closest('.nav-row') || b).offsetTop;
+    if (animate && !Motion.reduced) Motion.to(this.pill, 'translate', '0px ' + top + 'px', 650, Motion.Ease.spring);
+    else this.pill.style.translate = '0px ' + top + 'px';
   },
-  stagger() {
-    [...this.body.children].forEach((c, i) => Motion.enter(c, 0, 12, Math.min(i, 8) * 28));
+  stagger(dir = 1) {
+    [...this.body.children].forEach((c, i) => Motion.enter(c, 0, 12 * dir, Math.min(i, 8) * 28));
+  },
+  // chips for the sections of a long page
+  buildJump() {
+    const secs = [...this.body.querySelectorAll(':scope > .set-sec')].filter(s => !s.hidden && s.querySelector('h3'));
+    const show = !this.q && this.page !== 'home' && secs.length > 1;
+    this.jumpSecs = show ? secs : [];
+    const sig = show ? this.page + secs.map(s => s.querySelector('h3').textContent).join('|') : '';
+    if (sig === this.jumpSig) { this.spy(); return; }
+    this.jumpSig = sig;
+    this.jump.hidden = !show;
+    if (!show) { this.jump.replaceChildren(); return; }
+    this.jumpPill = h('i', { class: 'jump-pill' });
+    this.jump.replaceChildren(this.jumpPill, ...secs.map((s, i) => h('button', { class: 'no-press', text: s.querySelector('h3').textContent, onclick: () => {
+      const sec = this.jumpSecs[i];
+      if (sec) this.body.scrollTo({ top: sec.offsetTop - 6, behavior: Motion.reduced ? 'auto' : 'smooth' });
+    } })));
+    this.jumpOn = -1;
+    this.spy();
+  },
+  spy() {
+    const list = this.jumpSecs;
+    if (!list?.length || !this.jumpPill) return;
+    const top = this.body.scrollTop + 40, atEnd = this.body.scrollTop + this.body.clientHeight >= this.body.scrollHeight - 4;
+    let at = 0;
+    list.forEach((s, i) => { if (s.offsetTop <= top) at = i; });
+    if (atEnd) at = list.length - 1;
+    if (at === this.jumpOn) return;
+    const first = this.jumpOn < 0;
+    this.jumpOn = at;
+    const btns = [...this.jump.querySelectorAll('button')], b = btns[at];
+    btns.forEach((x, i) => x.classList.toggle('on', i === at));
+    if (!b) return;
+    if (first || Motion.reduced) { this.jumpPill.style.translate = b.offsetLeft + 'px 0px'; this.jumpPill.style.width = b.offsetWidth + 'px'; }
+    else { Motion.to(this.jumpPill, 'translate', b.offsetLeft + 'px 0px', 600, Motion.Ease.bouncy); Motion.size(this.jumpPill, 'width', b.offsetWidth, true); }
+    b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  },
+  headToggle(key) {
+    const sw = UI.toggle(!!getPath(key), on => {
+      setPath(key, on);
+      save();
+      Page.renderAll(false);
+      if (key === 'weather.on' && on) Weather.refresh();
+      this.rebuild();
+      this.stagger();
+    });
+    sw.title = t('Show or hide');
+    return sw;
   },
   renderPage() {
     this.rows = [];
     const pages = PAGES();
     this.body.replaceChildren();
+    this.headSw.replaceChildren();
+    this.headKey = null;
     if (this.q) {
       this.title.textContent = t('Search');
       this.blurb.textContent = '';
@@ -139,30 +229,36 @@ const Settings = {
     const p = pages.find(x => x.id === this.page) || pages[0];
     this.title.textContent = t(p.title);
     this.blurb.textContent = p.blurb ? t(p.blurb) : '';
+    // a widget's own on/off lives by its title; switched off, the page says so instead of showing rows that do nothing
+    const onKey = NAV_TOGGLES[p.id];
+    if (onKey) {
+      this.headKey = onKey;
+      this.headSwitch = this.headToggle(onKey);
+      this.headSw.append(this.headSwitch);
+      if (!getPath(onKey)) {
+        this.body.append(h('div', { class: 'set-off' }, icon(p.icon), h('b', { text: t('Hidden on your page') }),
+          h('button', { class: 'accent-btn small', text: t('Show it'), onclick: () => this.headSwitch.click() })));
+        this.refresh();
+        return;
+      }
+    }
     // cards split on each 'head' row; rarely-needed rows wait behind "More options"
-    const main = p.rows.filter(r => !r.adv), more = p.rows.filter(r => r.adv);
-    let title = '', group = [];
+    const rows = onKey ? p.rows.filter(r => r.key !== onKey) : p.rows;
+    const main = rows.filter(r => !r.adv), more = rows.filter(r => r.adv);
+    let title = '', group = [], go = null;
     for (const r of main) {
-      if (r.type === 'head') { if (group.length) this.card(title, group, p); title = t(r.label); group = []; } else group.push(r);
+      if (r.type === 'head') { if (group.length) this.card(title, group, p, go); title = t(r.label); go = r.go; group = []; } else group.push(r);
     }
-    if (group.length) this.card(title, group, p);
-    if (more.length) {
-      const shut = !this.moreOpen?.[p.id];
-      const box = h('div', { class: 'set-more' }, this.rowsCard(more, p));
-      box.hidden = shut;
-      const btn = h('button', { class: 'more-btn no-press' + (shut ? '' : ' open'), onclick: () => {
-        const open = box.hidden;
-        (this.moreOpen ||= {})[p.id] = open;
-        box.hidden = !open;
-        btn.classList.toggle('open', open);
-        if (open) { Motion.enter(box, 0, -8); this.placeSegs(); }
-      } }, icon('E70D'), h('span', { text: t('More options') }));
-      this.body.append(btn, box);
-    }
+    if (group.length) this.card(title, group, p, go);
+    if (more.length) this.card(t('More options'), more, p);
+    // where to go from here
+    const flat = NAV.flatMap(x => x[1]), nextId = flat[flat.indexOf(p.id) + 1], next = pages.find(x => x.id === nextId);
+    if (next) this.body.append(h('button', { class: 'set-next no-press', onclick: () => this.go(next.id) }, icon(next.icon), h('span', { text: t(next.title) }), icon('E76C')));
     this.refresh();
   },
-  card(title, rows, p) {
+  card(title, rows, p, go) {
     const c = this.rowsCard(rows, p);
+    if (go) c.append(h('div', { class: 'card-foot' }, h('button', { class: 'card-go no-press', onclick: e => { Motion.pop(e.currentTarget, .9); this.go(go); } }, h('span', { text: title }), icon('E76C'))));
     this.body.append(title ? h('section', { class: 'set-sec' }, h('h3', { text: title }), c) : c);
   },
   rowsCard(rows, p) {
@@ -181,15 +277,21 @@ const Settings = {
   },
   refresh() {
     for (const [key, { sw, btn }] of this.navToggles) { const on = !!getPath(key); sw.set(on); btn.classList.toggle('off', !on); }
+    for (const [, g] of this.navGroups) {
+      const keys = g.ids.map(id => NAV_TOGGLES[id]).filter(Boolean);
+      g.count.textContent = keys.length ? `${keys.filter(k => getPath(k)).length}/${keys.length}` : '';
+    }
+    if (this.headKey) this.headSwitch?.set(!!getPath(this.headKey));
     for (const r of this.rows) r.el.hidden = !!(r.when && !r.when());
     for (const c of this.body.querySelectorAll('.set-card')) {
       const empty = ![...c.children].some(x => !x.hidden);
       (c.closest('.set-sec') || c).hidden = empty;
     }
     this.placeSegs();
+    this.buildJump();
   },
   // a pill can't be measured while its row is hidden, so place it once the row shows
-  placeSegs() { for (const seg of this.body.querySelectorAll('.seg')) seg.place?.(false); },
+  placeSegs() { UI.placeAll([...this.body.querySelectorAll('.seg')]); },
 
   row(r, sec) {
     const label = r.label ? t(r.label) : '';
@@ -222,8 +324,24 @@ const Settings = {
           frame ||= requestAnimationFrame(() => { frame = 0; (LIVE[r.key] || sec.apply)?.(); });
         });
         input.addEventListener('change', () => { save(); this.refresh(); });
+        // percent sliders show where 0, 25, 50, 75 and 100 are, inside whatever range they cover; press a mark to go there
+        const percent = r.unit === '%' || r.max === 1, f = r.max === 1 ? 100 : 1, every = (r.max - r.min) * f > 125 ? 50 : 25, marks = [];
+        if (percent) for (let v = Math.ceil(r.min * f / every) * every; v <= r.max * f + 1e-6; v += every) marks.push(v);
+        const ticks = marks.length ? h('div', { class: 'set-ticks' }, marks.map(v => {
+          const b = h('button', { type: 'button', class: 'set-tick no-press', style: `--at:${(v / f - r.min) / (r.max - r.min)}`, onclick: () => {
+            input.value = v / f;
+            input.dispatchEvent(new Event('input'));
+            input.dispatchEvent(new Event('change'));
+            Motion.pop(input, 1.01);
+          } }, h('i'), h('span', { text: v + '%' }));
+          b.dataset.v = v / f;
+          return b;
+        })) : null;
+        const lit = () => { if (ticks) for (const b of ticks.children) b.classList.toggle('on', +input.value >= +b.dataset.v - 1e-6); };
+        input.addEventListener('input', lit);
         paint();
-        return h('div', { class: 'set-row stack' }, h('div', { class: 'set-range-head' }, h('div', { class: 'row-text' }, h('label', { text: label }), hint ? h('small', { text: t(hint) }) : null), out), input);
+        lit();
+        return h('div', { class: 'set-row stack' + (ticks ? ' has-ticks' : '') }, h('div', { class: 'set-range-head' }, h('div', { class: 'row-text' }, h('label', { text: label }), hint ? h('small', { text: t(hint) }) : null), out), input, ticks);
       }
       case 'text': {
         const input = h('input', { type: r.secret ? 'password' : r.input || 'text', value: val() ?? '', placeholder: r.placeholder ? t(r.placeholder) : '', spellcheck: false, autocomplete: 'off', 'aria-label': label });
@@ -246,6 +364,7 @@ const Settings = {
     }
   },
 };
+const groupOf = id => NAV.find(([g, ids]) => g && ids.includes(id))?.[0];
 const NAV = [
   [null, ['home']],
   ['Look', ['look', 'background', 'text', 'layout']],
@@ -294,6 +413,7 @@ const HINTS = {
 };
 const applyCss = () => { applyPage(); globalThis.Glass?.on && Glass.later(); };
 const LIVE = {
+  'surface.glassfrost': () => { applyPage(); globalThis.Glass?.on && Glass.scan(); },
   'clock.glassfrost': () => globalThis.GlassDigits?.refresh(),
   'clock.glassrefraction': () => globalThis.GlassDigits?.refresh(),
   'clock.weight': () => { applyPage(); globalThis.GlassDigits?.refresh(); },
@@ -313,8 +433,9 @@ function selectBtn(options, value, onChange) {
 }
 
 function tiles(r, value, onChange) {
-  const box = h('div', { class: 'tiles cols-' + (r.cols || 3) });
-  for (const o of r.options) {
+  const options = typeof r.options === 'function' ? r.options() : r.options;
+  const box = h('div', { class: 'tiles cols-' + (r.cols || (typeof r.options === 'function' ? options.length : 3)) });
+  for (const o of options) {
     const b = h('button', { type: 'button', class: 'tile no-press' + (o.value === value ? ' on' : ''), title: t(o.label), onclick: () => {
       for (const x of box.children) x.classList.remove('on');
       b.classList.add('on');
@@ -331,7 +452,7 @@ const opts = pairs => Object.entries(pairs).map(([value, label]) => ({ value, la
 /* ---------- little live previews for the pickers ---------- */
 const miniTheme = theme => () => h('div', { class: 'mini', 'data-theme': theme }, h('i', { class: 'mini-key' }), h('i', { class: 'mini-key' }), h('i', { class: 'mini-dot' }));
 const miniSplit = (a, b) => () => h('div', { class: 'mini-split' }, miniTheme(a)(), miniTheme(b)());
-const miniLayout = name => () => h('div', { class: 'mini-layout' }, ['tl', 'tc', 'tr', 'l', 'center', 'r', 'bl', 'bc', 'br'].map(z => h('i', { class: (PRESETS[name][z] || []).some(id => ['weather', 'quote', 'links'].includes(id)) ? 'fill' : z === 'center' ? 'mid-block' : '' })));
+const miniLayout = name => () => h('div', { class: 'mini-layout' }, ['tl', 'tc', 'tr', 'l', 'center', 'r', 'bl', 'bc', 'br'].map(z => h('i', { class: ((name === 'custom' ? S.layout.custom : PRESETS[name])[z] || []).some(id => ['weather', 'quote', 'links'].includes(id)) ? 'fill' : z === 'center' ? 'mid-block' : '' })));
 
 /* ---------- the settings themselves ---------- */
 const applyAll = () => Page.renderAll(false);
@@ -367,6 +488,7 @@ const SURFACE_ROWS = [
     after: () => Settings.rebuild() },
   { type: 'range', key: 'surface.opacity', label: 'Opacity', min: 5, max: 100, unit: '%', when: () => S.style !== 'glass' && ['translucent', 'glass'].includes(S.surface.mode) },
   { type: 'range', key: 'surface.blur', label: 'Blur', min: 0, max: 40, unit: 'px', when: () => S.surface.mode === 'glass' },
+  { type: 'range', key: 'surface.glassfrost', label: 'Frosted', min: 0, max: 100, step: 5, unit: '%', hint: '0% is the normal glass. 50% is clear glass like the clock. 100% is fully frosted.', when: () => S.style === 'glass' && S.surface.mode === 'translucent' },
   { type: 'range', key: 'surface.refraction', label: 'Refraction', min: 0, max: 120, when: () => S.style === 'glass' && ['glass', 'translucent'].includes(S.surface.mode) },
 ];
 const THEME_ROW = { type: 'tiles', key: 'dark', label: 'Appearance', cols: 4, options: [
@@ -388,12 +510,13 @@ const ACCENT_ROW = { type: 'custom', label: 'Accent color', build: sec => {
   }));
   return box;
 } };
-const LAYOUT_ROW = { type: 'tiles', key: 'layout.preset', label: 'Layout', cols: 4, options: [
+const LAYOUT_PRESETS = [
   { value: 'centered', label: 'Centered', preview: miniLayout('centered') },
   { value: 'dashboard', label: 'Dashboard', preview: miniLayout('dashboard') },
   { value: 'dock', label: 'Dock', preview: miniLayout('dock') },
   { value: 'minimal', label: 'Minimal', preview: miniLayout('minimal') },
-], after: v => { S.layout.zones = structuredClone(PRESETS[v]); } };
+];
+const LAYOUT_ROW = { type: 'tiles', key: 'layout.preset', label: 'Layout', options: () => S.layout.custom ? [...LAYOUT_PRESETS, { value: 'custom', label: 'My layout', preview: miniLayout('custom') }] : LAYOUT_PRESETS, after: v => { S.layout.zones = layoutZones(v); } };
 const ARRANGE_BTN = { type: 'custom', label: 'Arrange page by dragging', build: () => h('div', { class: 'arrange-box' },
   h('button', { class: 'accent-btn arrange-btn', onclick: () => Lazy.extras().then(() => Arrange.toggle()) }, icon('E80A'), h('span', { text: t('Arrange page by dragging') })),
   h('div', { class: 'set-hint', text: t('Move anything on your page, including the clock, calendar and links.') })) };
@@ -404,6 +527,12 @@ const WIDGET_TOGGLES = [
   ['quotes.on', 'Quotes', 'E8BD', 'quotes'], ['pomodoro.on', 'Pomodoro', 'E916', 'pomodoro'], ['ambient.on', 'Sounds', 'E767', 'sounds'],
   ['tasks.on', 'Tasks', 'E9D5', 'tasks'], ['notes.on', 'Notes', 'E70B', 'notes'], ['countdown.on', 'Countdown', 'E823', 'countdown'], ['progress.on', 'Progress', 'E9D2', 'progress'],
 ];
+function buildPageLinks(list) {
+  return h('div', { class: 'shortcuts' }, list.map(([id, value]) => {
+    const p = PAGES().find(x => x.id === id);
+    return h('button', { class: 'shortcut no-press', onclick: () => Settings.go(id) }, icon(p.icon), h('span', {}, h('b', { text: t(p.title) }), h('small', { text: value() })));
+  }));
+}
 function buildWidgetGrid(sec) {
   return h('div', { class: 'widget-grid' }, WIDGET_TOGGLES.map(([key, name, ic, page]) => {
     const tile = h('div', { class: 'widget-tile' + (getPath(key) ? ' on' : '') });
@@ -450,8 +579,9 @@ function buildPositions(sec) {
     selectBtn(opts(ZONE_NAMES).map(o => ({ ...o, label: t(o.label) })), zoneOf(id), v => {
       for (const z of ZONES) S.layout.zones[z] = (S.layout.zones[z] || []).filter(x => x !== id);
       S.layout.zones[v].push(id);
-      S.layout.preset = 'custom';
+      rememberLayout();
       Settings.changed(sec);
+      Settings.rebuild();
     }))));
 }
 
@@ -525,7 +655,17 @@ function buildFontPicker(sec) {
 }
 
 let pagesMemo = null;
-function PAGES() { return pagesMemo ||= buildPages(); }
+function PAGES() { return pagesMemo ||= addTextColors(buildPages()); }
+// a widget page ends with its own text color, unless it already has one
+function addTextColors(pages) {
+  const own = { calendar: 'date', search: 'search', weather: 'weather', quotes: 'quotes', notes: 'notes', pomodoro: 'pomodoro', tasks: 'tasks', sounds: 'ambient', countdown: 'countdown', progress: 'progress' };
+  for (const p of pages) {
+    const k = own[p.id];
+    if (!k) continue;
+    p.rows.push({ type: 'color', key: k + '.textcolor', label: 'Text color', when: () => !!S[k]?.on, clearable: true, fallback: '#ffffff' });
+  }
+  return pages;
+}
 function buildPages() {
   const b = () => S.bg.type;
   const photo = () => !['friis', 'color'].includes(b());
@@ -533,14 +673,22 @@ function buildPages() {
     {
       id: 'home', title: 'Overview', icon: 'E80F', blurb: 'Start here: where things go, what is on your page, and how it looks.', apply: applyAll,
       rows: [
-        ARRANGE_BTN,
-        { ...LAYOUT_ROW, after: v => { S.layout.zones = structuredClone(PRESETS[v]); Settings.rebuild(); } },
-        { type: 'head', label: '' },
-        { type: 'custom', label: 'On your page', hint: 'Click a name to open its settings. Use the switch to show or hide it.', build: buildWidgetGrid },
-        { type: 'head', label: '' },
+        { type: 'head', label: 'Look', go: 'look' },
         STYLE_ROW,
         THEME_ROW,
         ACCENT_ROW,
+        { type: 'head', label: 'Layout', go: 'layout' },
+        ARRANGE_BTN,
+        { ...LAYOUT_ROW, label: '', after: v => { S.layout.zones = layoutZones(v); Settings.rebuild(); } },
+        { type: 'head', label: 'On your page', go: 'clock' },
+        { type: 'custom', build: buildWidgetGrid },
+        { type: 'head', label: 'Setup', go: 'profiles' },
+        { type: 'custom', build: () => buildPageLinks([
+          ['profiles', () => Profiles.list().find(x => x.id === Profiles.active())?.name || t('Default')],
+          ['system', () => LANGS[LANG] || LANG],
+          ['backup', () => t(S.sync.type === 'browser' ? 'Chrome account' : S.sync.type === 'gist' ? 'GitHub Gist' : 'Off')],
+        ]) },
+        { type: 'custom', label: 'Keyboard shortcuts', build: buildShortcuts },
       ],
     },
     {
@@ -549,6 +697,7 @@ function buildPages() {
         STYLE_ROW,
         THEME_ROW,
         ACCENT_ROW,
+        { type: 'color', key: 'textColor', label: 'Text color for all widgets', hint: 'Each widget can still have its own color in its settings.', clearable: true, fallback: '#ffffff' },
         { type: 'head', label: 'Surfaces' },
         ...SURFACE_ROWS,
         { type: 'head', label: 'Motion' },
@@ -595,7 +744,7 @@ function buildPages() {
       id: 'layout', title: 'Layout', icon: 'E80A', blurb: 'Move anything on your page.', apply: applyAll,
       rows: [
         ARRANGE_BTN,
-        { ...LAYOUT_ROW, after: v => { S.layout.zones = structuredClone(PRESETS[v]); Settings.rebuild(); } },
+        { ...LAYOUT_ROW, after: v => { S.layout.zones = layoutZones(v); Settings.rebuild(); } },
         { type: 'head', label: 'Exact positions' },
         { type: 'custom', build: buildPositions },
         { type: 'head', label: 'Size' },
@@ -641,6 +790,7 @@ function buildPages() {
         { type: 'switch', key: 'date.week', label: 'Show the week', hint: 'Click it to open the whole month.', when: () => S.date.on && S.date.style === 'rail' },
         { type: 'switch', key: 'date.weeknum', label: 'Show week numbers', when: () => S.date.on && S.date.style === 'rail' },
         { type: 'head', label: 'Dates' },
+        { type: 'select', key: 'date.holidays', label: 'Holidays', hint: 'Marked in the month that opens when you click the calendar.', when: isOn('date.on'), options: opts({ auto: 'Automatic', off: 'Off', DK: 'Danmark', DE: 'Deutschland', ES: 'España', MX: 'México', FR: 'France', BR: 'Brasil', JP: '日本', KR: '대한민국', CN: '中国', US: 'United States', GB: 'United Kingdom' }) },
         { type: 'select', key: 'date.firstday', label: 'Week starts on', when: isOn('date.on'), options: opts({ auto: 'Automatic', mon: 'Monday', sun: 'Sunday', sat: 'Saturday' }) },
         { type: 'select', key: 'date.format', label: 'Date format', when: isOn('date.on'), options: opts({ auto: 'Automatic', eu: 'Day first', us: 'Month first', cn: 'Numeric' }) },
       ],
@@ -652,6 +802,7 @@ function buildPages() {
         { type: 'tiles', key: 'greeting.design', label: 'Greeting style', cols: 4, when: isOn('greeting.on'), options: [{ value: 'classic', label: 'Classic', icon: 'E706' }, { value: 'stacked', label: 'Stacked', icon: 'E8FD' }, { value: 'card', label: 'Card', icon: 'E8A9' }, { value: 'minimal', label: 'Minimal', icon: 'E8D2' }] },
         { type: 'head', label: 'Your name' },
         { type: 'text', key: 'greeting.name', label: 'Greeting name', placeholder: 'Your name', when: isOn('greeting.on') },
+        { type: 'color', key: 'greeting.color', label: 'Greeting color', when: isOn('greeting.on'), clearable: true, fallback: '#ffffff' },
         { type: 'custom', label: 'Color of your name', when: isOn('greeting.on'), build: buildNameColor },
         { type: 'head', label: 'What it says' },
         { type: 'tiles', key: 'greeting.mode', label: 'Words', cols: 4, when: isOn('greeting.on'), options: [{ value: 'auto', label: 'Classic', icon: 'E76E' }, { value: 'varied', label: 'Varied', icon: 'E8B1' }, { value: 'world', label: 'World', icon: 'E774' }, { value: 'custom', label: 'My own', icon: 'E70F' }], after: () => Settings.rebuild() },
@@ -693,6 +844,7 @@ function buildPages() {
         { type: 'tiles', key: 'links.style', label: 'Style', cols: 5, when: isOn('links.on'), options: [{ value: 'large', label: 'Large', icon: 'E8A9' }, { value: 'medium', label: 'Medium', icon: 'E8A9' }, { value: 'small', label: 'Small', icon: 'E80A' }, { value: 'inline', label: 'Inline', icon: 'E8FD' }, { value: 'text', label: 'Text', icon: 'E8D2' }] },
         { type: 'range', key: 'links.row', label: 'Links per row', min: 1, max: 14, when: isOn('links.on') },
         { type: 'switch', key: 'links.titles', label: 'Show titles', when: isOn('links.on') },
+        { type: 'color', key: 'links.titlecolor', label: 'Title color', when: () => S.links.on && S.links.titles !== false, clearable: true, fallback: '#ffffff' },
         { type: 'head', label: 'When you click' },
         { type: 'switch', key: 'links.newtab', label: 'Open in new tab', when: isOn('links.on') },
         { type: 'head', label: 'Groups' },

@@ -569,9 +569,9 @@ a { color: inherit; text-decoration: none; }
 /* in Clay, the chosen one is pressed into the surface */
 
 /* while settings are open every widget is a target that opens its own settings */
-[data-preview] #page * { pointer-events: none; }
-[data-preview] #page .w { pointer-events: auto; cursor: pointer; border-radius: 16px; }
-[data-preview] #page .w:hover, #page .w.spot { outline: 3px solid var(--accent); outline-offset: 6px; }
+[data-preview] #page { pointer-events: none; }
+[data-preview] #page .w { border-radius: 16px; }
+#page .w.spot { outline: 3px solid var(--accent); outline-offset: 6px; }
 
 /* a white accent carries dark text */
 [data-plainaccent] :is(.accent-btn, .day.today, .day.today b, .day.today small, .cal-d.today, .mm-grid .today, .cp-top, .tick.on) { color: #111113 !important; text-shadow: none; }
@@ -670,3 +670,55 @@ a { color: inherit; text-decoration: none; }
 /* your own clock colour, in any mode, whenever the clock isn't glass */
 [data-clockcolor] #page .clock.plain, [data-clockcolor] #page .clock .digit:not(.gd) { color: var(--clock-color) !important; }
 [data-clockcolor] #page .hand:not(.s) { background: var(--clock-color); }
+
+/* greeting: text first, with the sun's path beside it */
+.g-classic { gap: 3px; }
+.g-classic .g-title { gap: 12px; align-items: center; }
+.g-classic .g-main { font-size: calc(var(--greeting-size) * .86); font-weight: 600; letter-spacing: -.025em; }
+.g-classic .g-sub { font-size: 13px; font-weight: 500; opacity: .82; }
+.g-arc { flex: none; width: calc(var(--greeting-size) * 1.3); height: calc(var(--greeting-size) * .74); contain: strict; color: inherit; }
+.g-arc svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.g-arc path { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.g-arc .g-hz { opacity: .32; }
+.g-arc .g-path { opacity: .32; }
+.g-arc .g-done { stroke: #FFC95C; opacity: 1; }
+.g-arc .g-sunny { fill: #FFD166; }
+.g-arc .g-glow { fill: #FFC95C; opacity: .26; }
+.g-arc .g-moon { fill: #E4E9F5; }
+[data-theme="light"] body:not([data-photo]) .g-arc .g-moon { fill: #8791A6; }
+
+/* forecast graph */
+.wx-plot { position: relative; }
+.wx-mark { position: absolute; font-size: 10.5px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; translate: -50% 0; white-space: nowrap; }
+.wx-mark.hi { color: #FF9472; margin-top: -14px; }
+.wx-mark.lo { color: #7CC2FF; margin-top: 6px; }
+.wx-nowdot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 3px rgb(255 255 255 / .22); }
+[data-theme="light"] body:not([data-photo]) .wx-nowdot { background: var(--text); }
+
+/* sunrise and sunset */
+.wx-sun { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.wxs-art svg { display: block; width: 100%; height: auto; overflow: visible; }
+.wxs-hz { fill: none; stroke: currentColor; stroke-opacity: .28; stroke-width: 1.2; stroke-linecap: round; }
+.wxs-path { fill: none; stroke: currentColor; stroke-opacity: .3; stroke-width: 2; stroke-linecap: round; }
+.wxs-done { fill: none; stroke-width: 3; stroke-linecap: round; }
+.wxs-moon { fill: #E4E9F5; }
+.wxs-times { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wxs-times small { color: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+.wxs-t { display: inline-flex; align-items: center; gap: 5px; color: var(--text); font-size: 12.5px; }
+.wxs-t b { font-weight: 600; }
+.wxs-t svg { width: 14px; height: 14px; color: #FFC95C; }
+.wx-sun.night .wxs-done { opacity: .45; }
+.g-classic { gap: 5px; }
+.g-classic .g-title { min-height: calc(var(--greeting-size) * 1.45); }
+.weeknum.inset { display: inline-flex; align-items: center; align-self: stretch; padding: 0 16px; border-radius: var(--week-radius, 14px); box-shadow: none; }
+[data-style="glass"] .weeknum.inset { border-radius: 999px; }
+.zone > .w[data-w="search"] { position: relative; z-index: 6; }
+[data-gcolor] #page :is(.greeting, .greeting .g-sub, .greeting .g-main) { color: var(--g-color) !important; text-shadow: none; }
+[data-gcolor] #page .greeting .g-name { color: var(--g-name, var(--g-color)) !important; }
+:root[data-ktcolor] #page .key .name { color: var(--kt-color) !important; }
+/* a text color, for one widget or all of them */
+:root #page .w[data-tc] { --o-text: var(--text); --o-muted: var(--muted); --o-faint: var(--faint); }
+:root #page .w[data-tc] > * { --text: var(--tc); --muted: color-mix(in srgb, var(--tc) 82%, transparent); --faint: color-mix(in srgb, var(--tc) 66%, transparent); color: var(--tc); }
+:root #page .w[data-tc] .wx-pop { --text: var(--o-text); --muted: var(--o-muted); --faint: var(--o-faint); color: var(--o-text); }
+:root #page .w[data-tc] :is(.date-line, .date-line span, .day:not(.today), .day:not(.today) b, .day:not(.today) small, .day.past b, .weeknum, .mm-head, .mm-grid i, .mm-grid span:not(.today), .cp-day, .cp-week, .greeting, .g-main, .g-sub, .key .name, .wx-pill, .wx-pill b, .wx-pill-text span, .wx-pill-text small, .search input, .engine-btn, .engine-btn span, .quote-text, .quote-author, .clock.plain, .digit:not(.gd) b, .world, textarea, .cd-text b, .cd-text small, .cd-num, .pomo-time, .task span, .progress-row, .amb-name):not(.wx-pop *) { color: var(--tc) !important; }
+:root #page .w[data-tc] .search input::placeholder { color: color-mix(in srgb, var(--tc) 72%, transparent) !important; }

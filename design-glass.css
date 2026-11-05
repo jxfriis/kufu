@@ -1,3 +1,5 @@
+@property --gx { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --gy { syntax: "<length>"; inherits: false; initial-value: 0px; }
 /* Loaded only while the glass design is in use. */
 [data-style="glass"] #bg { background: radial-gradient(55% 60% at 14% 18%, color-mix(in srgb, var(--accent) 34%, transparent), transparent), radial-gradient(50% 60% at 88% 84%, rgb(40 120 150 / .34), transparent), radial-gradient(40% 40% at 70% 12%, rgb(232 170 70 / .16), transparent), var(--bg-color, var(--win)); }
 [data-style="glass"][data-theme="dark"] {
@@ -14,17 +16,17 @@
   --g-fallback: inset 0 1px 0 rgb(255 255 255 / .95), inset 0 -1px 0 rgb(255 255 255 / .7), inset 0 0 0 .5px rgb(0 0 0 / .05);
   --g-drop: 0 2px 10px rgb(60 48 28 / .1);
 }
-[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, .search form, #gear, #page .week) {
+[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, .search form, #gear, #page .week, #page .weeknum) {
   background: var(--lg-rim, none) center / 100% 100% no-repeat border-box !important;
   border-color: transparent !important;
   border-width: 1px !important;
   box-shadow: var(--g-drop) !important;
   backdrop-filter: blur(var(--surf-blur, 13px));
 }
-[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, .search form, #gear, #page .week):not([data-lgr]) { box-shadow: var(--g-fallback), var(--g-drop) !important; }
+[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, .search form, #gear, #page .week, #page .weeknum):not([data-lgr]) { box-shadow: var(--g-fallback), var(--g-drop) !important; }
 @property --lg-glow { syntax: "<number>"; inherits: false; initial-value: .35; }
-[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, #gear, #page .week) { transition: --lg-glow .42s cubic-bezier(.2, .8, .2, 1); }
-[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, #gear, #page .week):hover {
+[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, #gear, #page .week, #page .weeknum) { transition: --lg-glow .42s cubic-bezier(.2, .8, .2, 1); }
+[data-style="glass"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, #gear, #page .week, #page .weeknum):hover {
   background: radial-gradient(var(--lg-glow-size, 64px) circle at var(--gx, 50%) var(--gy, 50%), color-mix(in srgb, var(--g-glow) calc(var(--lg-glow) * 100%), transparent), transparent), var(--lg-rim, none) center / 100% 100% no-repeat border-box !important;
 }
 [data-style="glass"] :is(.wx-pop, .cal-pop, .folder-pop, .suggest, .toast, .arrange-bar) {
@@ -69,7 +71,7 @@
 [data-style="glass"] #page .digit { border-radius: calc(24px * var(--clock-scale)); font-weight: 600; }
 [data-style="glass"] #page .digit.small { border-radius: calc(16px * var(--clock-scale)); }
 [data-style="glass"] #page .key { border-radius: 24px; }
-[data-style="glass"] #page .week { border-radius: 20px; }
+[data-style="glass"] #page .week, #page .weeknum { border-radius: 20px; }
 [data-style="glass"] .well { border-radius: 15px; }
 [data-style="glass"] :is(.settings, .modal, .palette, .menu, .wx-pop, .cal-pop, .folder-pop, .cal-page) { border-radius: 28px; }
 [data-style="glass"] :is(.set-card, .tile, .widget-tile) { border-radius: 18px; }
@@ -84,9 +86,9 @@
 [data-style="glass"] .wx-rail .now-ring { animation: none; }
 [data-style="glass"] .wl { animation-play-state: paused; }
 [data-style="glass"] :is(.wx-pill:hover, .wx-pop, .g-badge:hover) .wl { animation-play-state: running; }
-[data-style="glass"][data-theme="light"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, .search form, #gear, #page .week) { background-color: rgb(255 255 255 / .1) !important; }
-[data-style="glass"][data-theme="dark"] :is(.cal-pop, .folder-pop) { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(20 20 23 / .34) !important; }
-[data-style="glass"][data-theme="light"] :is(.cal-pop, .folder-pop) { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(255 255 255 / .42) !important; }
+[data-style="glass"][data-theme="light"] :is(#page .panel, .cal-page, #page .digit, #page .key:not(.add), .wx-pill, .search form, #gear, #page .week, #page .weeknum) { background-color: rgb(255 255 255 / .1) !important; }
+[data-style="glass"][data-theme="dark"] :is(.cal-pop, .folder-pop, .wx-pop) { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(20 20 23 / .34) !important; }
+[data-style="glass"][data-theme="light"] :is(.cal-pop, .folder-pop, .wx-pop) { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(255 255 255 / .42) !important; }
 [data-style="glass"] .cal-d.out { opacity: .75; }
 [data-style="glass"] .settings { backdrop-filter: blur(24px) saturate(1.2); }
 [data-style="glass"][data-theme="dark"] .settings { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(22 22 25 / .5) !important; }
@@ -97,3 +99,17 @@
 [data-style="glass"] #page .key .name { color: #FFFFFF !important; }
 [data-style="glass"] #page :is(.day:not(.today), .day:not(.today) b, .day:not(.today) small, .day.past b, .mm-grid span:not(.today), .mm-grid .past, .mm-grid i) { color: #FFFFFF !important; }
 [data-style="glass"][data-theme="dark"] :is(.cal-d:not(.today), .cal-pop .mm-grid span:not(.today), .cal-pop .mm-grid i) { color: #FFFFFF !important; }
+[data-style="glass"] .g-name { color: var(--g-name, #FFFFFF); }
+[data-gfrost][data-theme="dark"][data-style="glass"] :is(#page .panel, .cal-page, #page .digit:not(.gd), #page .key:not(.add), .wx-pill, .search form, #gear, #page .week, #page .weeknum)[data-lgr] { background-color: rgb(255 255 255 / var(--gf-dark, 0)) !important; box-shadow: var(--g-drop), inset 0 0 18px rgb(255 255 255 / var(--gf-glow, 0)) !important; }
+[data-gfrost][data-theme="light"][data-style="glass"] :is(#page .panel, .cal-page, #page .digit:not(.gd), #page .key:not(.add), .wx-pill, .search form, #gear, #page .week, #page .weeknum)[data-lgr] { background-color: rgb(255 255 255 / var(--gf-light, 0)) !important; box-shadow: var(--g-drop), inset 0 0 18px rgb(255 255 255 / var(--gf-glow, 0)) !important; }
+[data-style="glass"] #page .weeknum.inset { background-color: transparent !important; }
+[data-style="glass"] #credit button { width: 36px; height: 36px; padding: 0; border: 1px solid transparent !important; border-radius: 50%; background: var(--lg-rim, none) center / 100% 100% no-repeat border-box !important; box-shadow: var(--g-drop) !important; color: #FFFFFF; filter: none; }
+[data-style="glass"] #credit button:not([data-lgr]) { background: rgb(255 255 255 / .16) !important; }
+[data-style="glass"] #credit { gap: 6px; }
+[data-style="glass"][data-theme="dark"] #page .wx-pop.panel { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(20 20 23 / .34) !important; }
+[data-style="glass"][data-theme="light"] #page .wx-pop.panel { background: var(--lg-rim, none) center / 100% 100% no-repeat border-box, rgb(255 255 255 / .42) !important; }
+[data-gfrost][data-style="glass"][data-theme="dark"] #page .wx-pop.panel[data-lgr] { background-color: rgb(20 20 23 / .34) !important; }
+[data-gfrost][data-style="glass"][data-theme="light"] #page .wx-pop.panel[data-lgr] { background-color: rgb(255 255 255 / .42) !important; }
+[data-style="glass"] #page .wx-pill { border-radius: 20px; }
+[data-style="glass"][data-theme="dark"] :is(.greeting, .greeting .g-sub) { color: #111113; text-shadow: none; }
+[data-style="glass"][data-theme="dark"] .g-name { color: var(--g-name, #111113); }
